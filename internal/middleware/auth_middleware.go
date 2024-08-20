@@ -11,15 +11,6 @@ import (
 func AuthMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
-		// c.Set("Access-Control-Allow-Origin", "*")
-        // c.Set("Access-Control-Allow-Methods", "GET,POST,HEAD,PUT,DELETE,PATCH,OPTIONS")
-        // c.Set("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization")
-        // c.Set("Access-Control-Allow-Credentials", "true")
-
-		// if c.Method() == "OPTIONS" {
-		// 	return c.SendStatus(fiber.StatusOK)
-		// }
-
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{

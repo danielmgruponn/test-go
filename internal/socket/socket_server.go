@@ -10,12 +10,7 @@ import (
 	"test-go/internal/handlers"
 	"test-go/internal/repositories"
 
-	// "strconv"
 	"sync"
-	// "test-go/internal/core/domain"
-	// "test-go/internal/core/ports"
-	// "test-go/internal/handlers"
-	// "test-go/internal/core/services"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"

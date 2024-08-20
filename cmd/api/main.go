@@ -26,11 +26,13 @@ func main() {
 	mnsService := services.NewMessageService(mnsRepo)
 	mnsHandler := handlers.NewMessageHandler(mnsService)
 
+	webRTC := handlers.NewWebRTCHandler()
+
 
 	// Crear la aplicación Fiber
 	app := fiber.New()
 
-	routes.SetupSocketRoutes(app, socketHandler)
+	routes.SetupSocketRoutes(app, socketHandler, webRTC)
 	routes.SetupRoutes(app, userHandler, mnsHandler)
 
 	// Iniciar el servidor

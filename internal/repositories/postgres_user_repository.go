@@ -20,7 +20,7 @@ func (r *postgresUserRepository) Create(user *domain.User) error {
 
 func (r *postgresUserRepository) FindByUsername(username string) (*domain.User, error) {
     var user domain.User
-    err := r.db.Table(user.TableUser()).Where("nick_name = ?", username).First(&user).Error
+    err := r.db.Table(user.TableUser()).Where("nickname = ?", username).First(&user).Error
     if err != nil {
         return nil, err
     }

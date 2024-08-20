@@ -33,7 +33,6 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
     if err := c.BodyParser(loginUser); err != nil {
         return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Datos inválidos"})
     }
-
     token, err := h.userService.Login(loginUser.NickName, loginUser.Password)
     if err != nil {
         return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Credenciales inválidas"})
