@@ -94,6 +94,66 @@ func (h *WebRTCHandler) handleSignal(userId string, message map[string]interface
         if err != nil {
             fmt.Println("Error sending signal to target: ", err)
         }
+    case "end":
+        signalData, err := json.Marshal(message["signal"])
+        if err != nil {
+            fmt.Println("Error marshalling signal data: ", err)
+            return
+        }
+
+        err = targetConn.WriteJSON(map[string]interface{}{
+            "type":   "end",
+            "from":   userId,
+            "signal": string(signalData),
+        })
+        if err != nil {
+            fmt.Println("Error sending cancel call to target: ", err)
+        }
+    case "video-call":
+        signalData, err := json.Marshal(message["signal"])
+        if err != nil {
+            fmt.Println("Error marshalling signal data: ", err)
+            return
+        }
+
+        err = targetConn.WriteJSON(map[string]interface{}{
+            "type":   "video-call",
+            "from":   userId,
+            "signal": string(signalData),
+        })
+        if err != nil {
+            fmt.Println("Error sending video call request to target: ", err)
+        }
+    case "accept-video":
+        signalData, err := json.Marshal(message["signal"])
+        if err != nil {
+            fmt.Println("Error marshalling signal data: ", err)
+            return
+        }
+
+        err = targetConn.WriteJSON(map[string]interface{}{
+            "type":   "accept-video",
+            "from":   userId,
+            "signal": string(signalData),
+        })
+        if err != nil {
+            fmt.Println("Error sending video call acceptance to target: ", err)
+        }
+    case "decline-video":
+        signalData, err := json.Marshal(message["signal"])
+        if err != nil {
+            fmt.Println("Error marshalling signal data: ", err)
+            return
+        }
+
+        err = targetConn.WriteJSON(map[string]interface{}{
+            "type":   "decline-video",
+            "from":   userId,
+            "signal": string(signalData),
+        })
+        if err != nil {
+            fmt.Println("Error sending video call acceptance to target: ", err)
+        }
     default:
         fmt.Printf("Unsupported message type: %s\n", messageType)
     }
