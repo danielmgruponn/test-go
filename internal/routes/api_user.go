@@ -6,16 +6,15 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/golang-jwt/jwt/v5"
 )
 
-func SetupRoutes(app *fiber.App, userController *handlers.UserHandler, mnsController *handlers.MessageHandler)  {
+func SetupRoutes(app *fiber.App, userController *handlers.UserHandler, mnsController *handlers.MessageHandler) {
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "http://localhost:8080/",
-        AllowMethods: "GET,POST,HEAD,PUT,DELETE,PATCH,OPTIONS",
-        AllowHeaders: "Origin, Content-Type, Accept, Authorization",
-        AllowCredentials: true,
+		AllowOrigins:     "http://localhost:8080/",
+		AllowMethods:     "GET,POST,HEAD,PUT,DELETE,PATCH,OPTIONS",
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
+		AllowCredentials: true,
 	}))
 
 	app.Post("/register", userController.Register)
@@ -26,13 +25,7 @@ func SetupRoutes(app *fiber.App, userController *handlers.UserHandler, mnsContro
 	api.Use(middleware.AuthMiddleware())
 
 	// Ejemplo de ruta protegida
-	api.Get("/profile", func(c *fiber.Ctx) error {
-		user := c.Locals("user").(jwt.MapClaims)
-		return c.JSON(fiber.Map{
-			"message": "Perfil del usuario",
-			"user":    user,
-		})
-	})
+	api.Get("/users/:id", userController.GetUserById)
 
 	api.Get("messages", mnsController.GetMessages)
 

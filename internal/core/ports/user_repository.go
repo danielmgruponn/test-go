@@ -8,4 +8,5 @@ import (
 type UserRepository interface {
 	Create(user *domain.User) error
 	FindByNickname(nickname string) (*dto.UserDTO, error)
+	FindById(id string) (*dto.UserDTO, error)
 }

@@ -30,3 +30,14 @@ func (r *postgresUserRepository) FindByNickname(username string) (*dto.UserDTO, 
 
 	return userDTO, nil
 }
+
+func (r *postgresUserRepository) FindById(id string) (*dto.UserDTO, error) {
+	var user domain.User
+	err := r.db.Table(user.TableUser()).Where("id = ?", id).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	userResponse := mappers.MapUserDomainToDTO(&user)
+
+	return userResponse, nil
+}

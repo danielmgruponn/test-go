@@ -16,8 +16,6 @@ func NewUserService(userRepo ports.UserRepository) ports.UserService {
 }
 
 func (s *userService) Register(user *dto.RegisterRequest) (uint, error) {
-	// Map user request to domain user
-
 	userDomain := &domain.User{
 		Nickname:   user.NickName,
 		PublicKey:  user.PublicKey,
@@ -47,6 +45,21 @@ func (s *userService) Login(nickname string) (dto.LoginResponse, error) {
 	response.ID = user.ID
 	response.NickName = user.NickName
 	response.Token = jwt
+	response.PrivateKey = user.PrivateKey
+	response.PublicKey = user.PublicKey
+
+	return response, nil
+}
+
+func (s *userService) GetUserById(id string) (dto.UserDTO, error) {
+	response := dto.UserDTO{}
+	user, err := s.userRepo.FindById(id)
+	if err != nil {
+		return response, err
+	}
+
+	response.ID = user.ID
+	response.NickName = user.NickName
 	response.PrivateKey = user.PrivateKey
 	response.PublicKey = user.PublicKey
 

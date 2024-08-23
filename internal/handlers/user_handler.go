@@ -43,3 +43,17 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(response)
 }
+
+func (h *UserHandler) GetUserById(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if id == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID inválido"})
+	}
+
+	userID, err := h.userService.GetUserById(id)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Usuario no encontrado"})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(userID)
+}
