@@ -74,16 +74,17 @@ func (h *SocketHandler) HandleSocket() fiber.Handler {
 					fmt.Printf("error unmarshalling message: %v\n", err)
 					continue
 				}
-				if message.Event == "chat" {
-					h.handleChatMessage(message)
-				}
 				switch stateMns.Event {
 				case "receiver_mns":
 					h.handlerStateMnsReceiver(stateMns)
 				case "read_mns":
-					fmt.Println(stateMns)
+					h.handlerStateMnsRead(stateMns)
 				default:
-					fmt.Printf("unknown event: %s\n", message.Event)
+					if message.Event == "chat" {
+						h.handleChatMessage(message)
+					} else {
+						fmt.Printf("unknown event: %s\n", message.Event)
+					}
 				}
 			}
 		}
@@ -109,6 +110,19 @@ func (h *SocketHandler) handlerStateMnsReceiver(message requests.UpdateStatusMes
 	messageService := services.NewMessageService(messageRepo)
 	messageHandler := handlers.NewMessageHandler(messageService)
 	mns, err := messageHandler.UpdateStateReceiver(message)
+	if err != nil {
+		return
+	}
+	if toClient, ok := h.clients[strconv.Itoa(int(mns.SenderID))]; ok {
+		toClient.sendMessage(*mns)
+	}
+}
+
+func (h *SocketHandler) handlerStateMnsRead(message requests.UpdateStatusMessage) {
+	messageRepo := repositories.NewPostgresMessageRepository(db.GetDB())
+	messageService := services.NewMessageService(messageRepo)
+	messageHandler := handlers.NewMessageHandler(messageService)
+	mns, err := messageHandler.UpdateStateRead(message)
 	if err != nil {
 		return
 	}
