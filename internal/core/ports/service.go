@@ -4,5 +4,5 @@ import "test-go/internal/dto"
 
 type UserService interface {
 	Register(user *dto.RegisterRequest) (uint, error)
-	Login(username string) (dto.LoginResponse, error)
+	Login(nickname string) (dto.LoginResponse, error)
 }

@@ -32,20 +32,20 @@ func (s *userService) Register(user *dto.RegisterRequest) (uint, error) {
 	return userDomain.ID, nil
 }
 
-func (s *userService) Login(username string) (dto.LoginResponse, error) {
+func (s *userService) Login(nickname string) (dto.LoginResponse, error) {
 	response := dto.LoginResponse{}
-	user, err := s.userRepo.FindByUsername(username)
+	user, err := s.userRepo.FindByNickname(nickname)
 	if err != nil {
 		return response, err
 	}
 
-	jwt, err := jwt.GenerateToken(user.ID, user.Nickname)
+	jwt, err := jwt.GenerateToken(user.ID, user.NickName)
 	if err != nil {
 		return response, err
 	}
 
 	response.ID = user.ID
-	response.NickName = user.Nickname
+	response.NickName = user.NickName
 	response.Token = jwt
 	response.PrivateKey = user.PrivateKey
 	response.PublicKey = user.PublicKey
