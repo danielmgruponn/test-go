@@ -8,7 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
-func SetupRoutes(app *fiber.App, userController *handlers.UserHandler, mnsController *handlers.MessageHandler) {
+func SetupRoutes(app *fiber.App, userController *handlers.UserHandler, mnsController *handlers.MessageHandler, fileController *handlers.FileHandler) {
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     "http://localhost:8080/",
@@ -27,6 +27,8 @@ func SetupRoutes(app *fiber.App, userController *handlers.UserHandler, mnsContro
 	// Ejemplo de ruta protegida
 	api.Get("/users/:id", userController.GetUserById)
 
-	api.Get("messages", mnsController.GetMessages)
+	api.Get("/messages", mnsController.GetMessages)
+
+	api.Post("/upload-files", fileController.UploadFiles)
 
 }
