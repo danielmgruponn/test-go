@@ -1,8 +1,9 @@
 package repositories
 
 import (
-    "test-go/internal/core/domain"
-    "gorm.io/gorm"
+	"test-go/internal/core/domain"
+
+	"gorm.io/gorm"
 )
 
 type postgresMessageRepository struct {
@@ -13,8 +14,17 @@ func NewPostgresMessageRepository(db *gorm.DB) *postgresMessageRepository {
     return &postgresMessageRepository{db: db}
 }
 
-func (r *postgresMessageRepository) CreateMessage(message *domain.Message) error {
-    return r.db.Create(message).Error
+func (r *postgresMessageRepository) CreateMessage(message *domain.Message) (*domain.Message, error) {
+    err := r.db.Create(message).Error
+    if err != nil {
+        return nil, err
+    }
+    mns := &domain.Message{}
+    err = r.db.First(mns, message.ID).Error
+    if err != nil {
+        return nil, err
+    }
+    return mns, nil
 }
 
 func (r *postgresMessageRepository) FindById(id int) ([]domain.Message, error) {
@@ -25,4 +35,17 @@ func (r *postgresMessageRepository) FindById(id int) ([]domain.Message, error) {
         return nil, err
     }
     return messages, nil
+}
+
+func (r *postgresMessageRepository) UpdateStateByMnsId(id int, state string) (*domain.Message, error) {
+    var mns domain.Message
+    err := r.db.Table(mns.TableMessages()).Where("id = ?", id).First(&mns).Error
+    if err != nil {
+        return nil, err
+    }
+    err = r.db.Model(&mns).Update("state", state).Error
+    if err != nil {
+        return nil, err
+    }
+    return &mns, nil
 }

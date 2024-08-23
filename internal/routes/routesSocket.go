@@ -18,7 +18,7 @@ func SetupSocketRoutes(app *fiber.App, socketHandler *socket.SocketHandler, webR
 		return fiber.ErrUpgradeRequired
 	})
 
-	app.Get("/ws/auth", middleware.WebSocketAuthMiddleware(), socketHandler.HandleSocket())
+	app.Get("/ws", middleware.WebSocketAuthMiddleware(), socketHandler.HandleSocket())
 
 	app.Get("/ws/webrtc", middleware.WebSocketAuthMiddleware(), webRTCController.HandlerWebRTC)
 }
