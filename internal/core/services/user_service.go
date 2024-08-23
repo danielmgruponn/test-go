@@ -1,31 +1,67 @@
 package services
 
 import (
-	"fmt"
 	"test-go/internal/core/domain"
 	"test-go/internal/core/ports"
+	"test-go/internal/dto"
 	"test-go/pkg/jwt"
 )
 
 type userService struct {
-    userRepo ports.UserRepository
+	userRepo ports.UserRepository
 }
 
 func NewUserService(userRepo ports.UserRepository) ports.UserService {
-    return &userService{userRepo: userRepo}
+	return &userService{userRepo: userRepo}
 }
 
-func (s *userService) Register(user *domain.User) error {
-    // Aquí deberías hashear la contraseña antes de guardarla
-    return s.userRepo.Create(user)
+func (s *userService) Register(user *dto.RegisterRequest) (uint, error) {
+	userDomain := &domain.User{
+		Nickname:   user.NickName,
+		PublicKey:  user.PublicKey,
+		PrivateKey: user.PrivateKey,
+	}
+
+	error := s.userRepo.Create(userDomain)
+	if error != nil {
+		return 0, error
+	}
+
+	return userDomain.ID, nil
 }
 
-func (s *userService) Login(username, password string) (string, error) {
-    user, err := s.userRepo.FindByUsername(username)
-    if err != nil {
-        return "", err
-    }
-    fmt.Println(password)
+func (s *userService) Login(nickname string) (dto.LoginResponse, error) {
+	response := dto.LoginResponse{}
+	user, err := s.userRepo.FindByNickname(nickname)
+	if err != nil {
+		return response, err
+	}
 
-    return jwt.GenerateToken(user.ID, user.NickName)
+	jwt, err := jwt.GenerateToken(user.ID, user.NickName)
+	if err != nil {
+		return response, err
+	}
+
+	response.ID = user.ID
+	response.NickName = user.NickName
+	response.Token = jwt
+	response.PrivateKey = user.PrivateKey
+	response.PublicKey = user.PublicKey
+
+	return response, nil
+}
+
+func (s *userService) GetUserById(id string) (dto.UserDTO, error) {
+	response := dto.UserDTO{}
+	user, err := s.userRepo.FindById(id)
+	if err != nil {
+		return response, err
+	}
+
+	response.ID = user.ID
+	response.NickName = user.NickName
+	response.PrivateKey = user.PrivateKey
+	response.PublicKey = user.PublicKey
+
+	return response, nil
 }

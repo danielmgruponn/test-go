@@ -101,6 +101,22 @@ func (h *SocketHandler) handleChatMessage(message requests.BodyMessageRequest) {
 			return
 		}
 		toClient.sendMessage(*mns)
+			fmt.Printf("Error converting string to int: %v", err)
+		}
+		sender, err := strconv.Atoi(message.From)
+		if err != nil {
+			fmt.Printf("Error converting string to int: %v", err)
+		}
+
+		dataMessage := &domain.Message{
+			Body:       message.Data,
+			ReceiverID: receiver,
+			SenderID:   sender,
+			State:      "1",
+		}
+		messageHandler.CreateMessage(dataMessage)
+		fmt.Println(dataMessage)
+		toClient.sendMessage(message)
 	}
 }
 
