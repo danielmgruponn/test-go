@@ -100,11 +100,11 @@ func (h *SocketHandler) handleChatMessage(message MessageObject) {
 
 		receiver, err := strconv.Atoi(message.To)
 		if err != nil {
-			fmt.Println("Error converting string to int: %v", err)
+			fmt.Printf("Error converting string to int: %v", err)
 		}
 		sender, err := strconv.Atoi(message.From)
 		if err != nil {
-			fmt.Println("Error converting string to int: %v", err)
+			fmt.Printf("Error converting string to int: %v", err)
 		}
 
 		dataMessage := &domain.Message{

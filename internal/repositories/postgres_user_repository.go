@@ -7,22 +7,22 @@ import (
 )
 
 type postgresUserRepository struct {
-    db *gorm.DB
+	db *gorm.DB
 }
 
 func NewPostgresUserRepository(db *gorm.DB) *postgresUserRepository {
-    return &postgresUserRepository{db: db}
+	return &postgresUserRepository{db: db}
 }
 
 func (r *postgresUserRepository) Create(user *domain.User) error {
-    return r.db.Create(user).Error
+	return r.db.Create(user).Error
 }
 
 func (r *postgresUserRepository) FindByUsername(username string) (*domain.User, error) {
-    var user domain.User
-    err := r.db.Table(user.TableUser()).Where("nickname = ?", username).First(&user).Error
-    if err != nil {
-        return nil, err
-    }
-    return &user, nil
+	var user domain.User
+	err := r.db.Table(user.TableUser()).Where("nickname = ?", username).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }

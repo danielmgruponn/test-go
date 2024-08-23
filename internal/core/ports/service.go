@@ -1,8 +1,8 @@
 package ports
 
-import "test-go/internal/core/domain"
+import "test-go/internal/dto"
 
 type UserService interface {
-    Register(user *domain.User) error
-    Login(username, password string) (string, error)
+	Register(user *dto.RegisterRequest) (uint, error)
+	Login(username string) (dto.LoginResponse, error)
 }
