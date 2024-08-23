@@ -14,14 +14,23 @@ func NewPostgresMessageRepository(db *gorm.DB) *postgresMessageRepository {
 	return &postgresMessageRepository{db: db}
 }
 
-func (r *postgresMessageRepository) CreateMessage(message *domain.Message) error {
-	return r.db.Create(message).Error
+func (r *postgresMessageRepository) CreateMessage(message *domain.Message) (*domain.Message, error) {
+	err := r.db.Create(message).Error
+	if err != nil {
+		return nil, err
+	}
+	mns := &domain.Message{}
+	err = r.db.First(mns, message.ID).Error
+	if err != nil {
+		return nil, err
+	}
+	return mns, nil
 }
 
 func (r *postgresMessageRepository) FindById(id int) ([]domain.Message, error) {
 	var mns domain.Message
 	var messages []domain.Message
-	err := r.db.Table(mns.TableMessage()).Where("receiver_id = ?", id).Order("created_at ASC").Find(&messages).Error
+	err := r.db.Table(mns.TableMessages()).Where("receiver_id = ?", id).Order("created_at ASC").Find(&messages).Error
 	if err != nil {
 		return nil, err
 	}

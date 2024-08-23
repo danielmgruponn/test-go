@@ -47,13 +47,13 @@ func (h *SocketHandler) HandleSocket() fiber.Handler {
 			c.Close()
 		}()
 		info := response.NewMessageResponse{
-			Event: "newUser",
+			Event:   "newUser",
 			Content: fmt.Sprintf("New user connected: %s", userId),
 		}
 		client.sendMessage(info)
 		h.broadcast(response.NewMessageResponse{
-			Event: "newUser",
-			Content:  fmt.Sprintf("New user connected: %s", userId),
+			Event:   "newUser",
+			Content: fmt.Sprintf("New user connected: %s", userId),
 		}, userId)
 		for {
 			messageType, msg, err := c.ReadMessage()
@@ -101,22 +101,6 @@ func (h *SocketHandler) handleChatMessage(message requests.BodyMessageRequest) {
 			return
 		}
 		toClient.sendMessage(*mns)
-			fmt.Printf("Error converting string to int: %v", err)
-		}
-		sender, err := strconv.Atoi(message.From)
-		if err != nil {
-			fmt.Printf("Error converting string to int: %v", err)
-		}
-
-		dataMessage := &domain.Message{
-			Body:       message.Data,
-			ReceiverID: receiver,
-			SenderID:   sender,
-			State:      "1",
-		}
-		messageHandler.CreateMessage(dataMessage)
-		fmt.Println(dataMessage)
-		toClient.sendMessage(message)
 	}
 }
 
