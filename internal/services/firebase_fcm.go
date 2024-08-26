@@ -55,13 +55,14 @@ func NewFCMClient() (*FCMClient, error) {
 	return &FCMClient{client: client}, nil
 }
 
-func (s *FCMClient) SendMessage(token, title, body string) error {
+func (s *FCMClient) SendMessage(token, title, body string, data map[string]string) error {
 	mns := &messaging.Message{
 		Token: token,
 		Notification: &messaging.Notification{
 			Title: title,
 			Body: body,
 		},
+		Data: data,
 	}
 
 	response, err := s.client.Send(context.Background(), mns)
