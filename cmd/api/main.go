@@ -1,21 +1,30 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"test-go/internal/core/services"
+	"test-go/internal/db"
 	"test-go/internal/handlers"
 	"test-go/internal/repositories"
-	"test-go/internal/socket"
 	"test-go/internal/routes"
-	"test-go/internal/db"
+	"test-go/internal/socket"
 
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gofiber/fiber/v2"
 )
 
 func main() {
 
 	db.Initialize()
+
+	s3Client, err := initS3Client()
+	if err != nil {
+		log.Fatal("Failed to initialize S3 client")
+	}
+
 	// Inicializar repositorios, servicios y handlers
 	userRepo := repositories.NewPostgresUserRepository(db.GetDB())
 	userService := services.NewUserService(userRepo)
@@ -26,15 +35,25 @@ func main() {
 	mnsService := services.NewMessageService(mnsRepo)
 	mnsHandler := handlers.NewMessageHandler(mnsService)
 
-	webRTC := handlers.NewWebRTCHandler()
+	fileService := services.NewFileService(s3Client)
+	fileHandler := handlers.NewFileHandler(fileService)
 
+	webRTC := handlers.NewWebRTCHandler()
 
 	// Crear la aplicación Fiber
 	app := fiber.New()
 
 	routes.SetupSocketRoutes(app, socketHandler, webRTC)
-	routes.SetupRoutes(app, userHandler, mnsHandler)
+	routes.SetupRoutes(app, userHandler, mnsHandler, fileHandler)
 
 	// Iniciar el servidor
 	log.Fatal(app.Listen(":" + os.Getenv("SERVER_PORT")))
+}
+
+func initS3Client() (*s3.Client, error) {
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		return nil, err
+	}
+	return s3.NewFromConfig(cfg), nil
 }

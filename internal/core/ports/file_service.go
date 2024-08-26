@@ -6,5 +6,5 @@ import (
 )
 
 type FileService interface {
-	UploadFiles(files []*multipart.FileHeader) (dto.FileAttachment, error)
+	UploadFiles(files []*multipart.FileHeader) ([]dto.FileUpload, error)
 }

@@ -10,6 +10,10 @@ type FileHandler struct {
 	fileService ports.FileService
 }
 
+func NewFileHandler(fileService ports.FileService) *FileHandler {
+	return &FileHandler{fileService}
+}
+
 func (f *FileHandler) UploadFiles(c *fiber.Ctx) error {
 	form, err := c.MultipartForm()
 	if err != nil {

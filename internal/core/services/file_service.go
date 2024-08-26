@@ -22,11 +22,11 @@ func NewFileService(s3Client *s3.Client) *FileService {
 	return &FileService{s3Client: s3Client}
 }
 
-func (f *FileService) UploadFiles(files []*multipart.FileHeader) ([]dto.FileAttachment, error) {
-	fileAttachments := make([]dto.FileAttachment, 0)
-
+func (f *FileService) UploadFiles(files []*multipart.FileHeader) ([]dto.FileUpload, error) {
+	fileAttachments := make([]dto.FileUpload, 0)
+	log.Printf("Uploading %d files", len(files))
 	for _, file := range files {
-		if file.Size > 300*1024*1024 {
+		if file.Size > 10*1024*1024 {
 			return nil, fmt.Errorf("file %s is too large", file.Filename)
 		}
 
@@ -64,7 +64,7 @@ func (f *FileService) UploadFiles(files []*multipart.FileHeader) ([]dto.FileAtta
 			return nil, err
 		}
 
-		fileUpload := dto.FileAttachment{
+		fileUpload := dto.FileUpload{
 			FileName: file.Filename,
 			FileSize: file.Size,
 			FileType: file.Header.Get("Content-Type"),
