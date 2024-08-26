@@ -27,7 +27,7 @@ func (h *MessageHandler) CreateMessage(m requests.BodyMessageRequest) (*response
 	if err != nil {
 		return nil, err
 	}
-	err = fcm.SendMessage("cipms7TZQoGX-F3enuvDLM:APA91bFkkiwOX_ZvMeOtR4WPEVHPbw10MCqzji164_wbu3sdFlPKyVNb69uapjAzqdvt99sgCX4qNfuCnSkwyR2qvuxj3CWgJWe8gsGFFygFB0OG7SZThy4uFhzDJ-wYOGPsAtrrzm3B", "Test nuevo Mensaje", "Test nuevo Mensaje")
+	err = fcm.SendMessage("Firebase del usuario receptor", "Test nuevo Mensaje", "Test nuevo Mensaje")
 	if err != nil {
 		return nil, err
 	}

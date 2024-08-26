@@ -2,9 +2,10 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"log"
 	"os"
-	"path/filepath"
 
 	firebase "firebase.google.com/go"
 	"firebase.google.com/go/messaging"
@@ -15,20 +16,33 @@ type FCMClient struct {
 	client *messaging.Client
 }
 
+type FirebaseCredentials struct {
+    ProjectID string `json:"project_id"`
+}
 
 func NewFCMClient() (*FCMClient, error) {
-	// credentials := filepath.Join("../../files/config/credentilals.json")
+	credentials := "files/config/credential.json"
 
-	data, err := os.Open("../../files/config/credentilals.json")
+	data, err := os.ReadFile(credentials)
 	if err != nil {
 		fmt.Println("Error al leer el archivo de credenciales: %v", err)
 	}
 
-	fmt.Printf(data)
+	var credential FirebaseCredentials
 
-	fmt.Println(data)
+	err = json.Unmarshal(data, &credential)
+    if err != nil {
+        log.Fatalf("error unmarshalling credentials: %v\n", err)
+    }
+
+	projectID := credential.ProjectID
+
+	config := &firebase.Config{
+		ProjectID: projectID,
+	}
+
 	opt := option.WithCredentialsFile(credentials)
-	app, err := firebase.NewApp(context.Background(), nil, opt)
+	app, err := firebase.NewApp(context.Background(), config, opt)
 	if err != nil {
 		return nil, fmt.Errorf("error al inicializar la app de Firebase: %v", err)
 	}
