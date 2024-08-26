@@ -4,6 +4,7 @@ import (
 	"test-go/internal/core/ports"
 	"test-go/internal/requests"
 	"test-go/internal/response"
+	"test-go/internal/services"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -22,11 +23,27 @@ func (h *MessageHandler) CreateMessage(m requests.BodyMessageRequest) (*response
 	if err != nil {
 		return nil, err
 	}
+	fcm, err := services.NewFCMClient()
+	if err != nil {
+		return nil, err
+	}
+	err = fcm.SendMessage("Firebase del usuario receptor", "Test nuevo Mensaje", "Test nuevo Mensaje")
+	if err != nil {
+		return nil, err
+	}
 	return mns, nil
 }
 
 func (h *MessageHandler) UpdateStateReceiver(m requests.UpdateStatusMessage) (*response.NewMessageResponse, error) {
 	mns, err := h.messageService.UpdateStateMessage(m, "2")
+	if err != nil {
+		return nil, err
+	}
+	return mns, nil
+}
+
+func (h *MessageHandler) UpdateStateRead(m requests.UpdateStatusMessage) (*response.NewMessageResponse, error) {
+	mns, err := h.messageService.UpdateStateMessage(m, "3")
 	if err != nil {
 		return nil, err
 	}
