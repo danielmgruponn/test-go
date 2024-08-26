@@ -3,149 +3,222 @@ package socket
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
-	"test-go/internal/core/services"
-	"test-go/internal/db"
-	"test-go/internal/handlers"
-	"test-go/internal/repositories"
-	"test-go/internal/requests"
-	"test-go/internal/response"
+	"log"
+	"test-go/internal/core/domain"
+	"test-go/internal/dto"
+	"time"
 
 	"sync"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
+	"gorm.io/gorm"
 )
 
-type Client struct {
-	Conn *websocket.Conn
-	Mu   sync.Mutex
-}
-
 type SocketHandler struct {
-	clients map[string]*Client
-	mu      sync.RWMutex
+	clients sync.Map
+	db      *gorm.DB
 }
 
-func NewSocketHandler() *SocketHandler {
+func NewSocketHandler(db *gorm.DB) *SocketHandler {
 	return &SocketHandler{
-		clients: make(map[string]*Client),
+		clients: sync.Map{},
+		db:      db,
 	}
 }
 
 func (h *SocketHandler) HandleSocket() fiber.Handler {
 	return websocket.New(func(c *websocket.Conn) {
+
 		userId := c.Locals("id").(string)
-		client := &Client{Conn: c}
-		h.mu.Lock()
-		h.clients[userId] = client
-		h.mu.Unlock()
+		fmt.Printf("User %s connected\n", userId)
+
+		var user domain.User
+		if err := h.db.First(&user, userId).Error; err != nil {
+			log.Printf("Error finding user: %v\n", err)
+			return
+		}
+		fmt.Printf("User: %v\n", user)
+
+		h.clients.Store(userId, c)
+
 		defer func() {
-			h.mu.Lock()
-			delete(h.clients, userId)
-			h.mu.Unlock()
+			h.clients.Delete(userId)
 			c.Close()
 		}()
-		info := response.NewMessageResponse{
-			Event:   "newUser",
-			Content: fmt.Sprintf("New user connected: %s", userId),
-		}
-		client.sendMessage(info)
-		h.broadcast(response.NewMessageResponse{
-			Event:   "newUser",
-			Content: fmt.Sprintf("New user connected: %s", userId),
-		}, userId)
+
 		for {
-			messageType, msg, err := c.ReadMessage()
+			var msg dto.WSMessage
+			err := c.ReadJSON(&msg)
 			if err != nil {
-				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-					fmt.Printf("error: %v\n", err)
-				}
 				break
 			}
-			if messageType == websocket.TextMessage {
-				var message requests.BodyMessageRequest
-				if err := json.Unmarshal(msg, &message); err != nil {
-					fmt.Printf("error unmarshalling message: %v\n", err)
-					continue
-				}
-				var stateMns requests.UpdateStatusMessage
-				if err := json.Unmarshal(msg, &stateMns); err != nil {
-					fmt.Printf("error unmarshalling message: %v\n", err)
-					continue
-				}
-				switch stateMns.Event {
-				case "receiver_mns":
-					h.handlerStateMnsReceiver(stateMns)
-				case "read_mns":
-					h.handlerStateMnsRead(stateMns)
-				default:
-					if message.Event == "chat" {
-						h.handleChatMessage(message)
-					} else {
-						fmt.Printf("unknown event: %s\n", message.Event)
-					}
-				}
+
+			fmt.Println("Received message:", msg)
+
+			switch msg.Type {
+			case "message":
+				h.handleNewMessage(user.ID, &msg)
+			case "status_update":
+				h.handleStatusUpdate(user.ID, &msg)
+			case "read_receipt":
+				h.handleReadReceipt(user.ID, &msg)
+			default:
+				log.Println("Unknown message type:", msg.Type)
 			}
 		}
 	})
 }
 
-func (h *SocketHandler) handleChatMessage(message requests.BodyMessageRequest) {
-	if toClient, ok := h.clients[strconv.Itoa(int(message.ReceiverID))]; ok {
-		messageRepo := repositories.NewPostgresMessageRepository(db.GetDB())
-		messageService := services.NewMessageService(messageRepo)
-		messageHandler := handlers.NewMessageHandler(messageService)
+func (h *SocketHandler) handleNewMessage(senderID uint, msg *dto.WSMessage) {
+	t, err := time.Parse(time.RFC3339, msg.ExpiresAt)
+	if err != nil {
+		return
+	}
 
-		mns, err := messageHandler.CreateMessage(message)
-		if err != nil {
+	fmt.Printf("Expires at: %v\n", t)
+
+	message := domain.Message{
+		SenderID:       senderID,
+		ReceiverID:     msg.ReceiverID,
+		Body:           msg.Body,
+		AESKeySender:   msg.AESKeySender,
+		AESKeyReceiver: msg.AESKeyReceiver,
+		State:          "sent",
+		ExpiredAt:      t,
+	}
+	tx := h.db.Begin()
+
+	if err := tx.Create(&message).Error; err != nil {
+		tx.Rollback()
+		log.Printf("Error creating message: %v\n", err)
+		return
+	}
+
+	var fileUploads []dto.FileUpload
+	if err := json.Unmarshal([]byte(msg.FileAttachments), &fileUploads); err != nil {
+		tx.Rollback()
+		log.Printf("Error unmarshalling file attachments: %v\n", err)
+		return
+	}
+
+	for _, file := range fileUploads {
+		fileAttachment := domain.FileAttachment{
+			MessageID: message.ID,
+			FileName:  file.FileName,
+			FileSize:  file.FileSize,
+			FileType:  file.FileType,
+			FileURL:   file.FileURL,
+		}
+
+		if err := tx.Create(&fileAttachment).Error; err != nil {
+			tx.Rollback()
+			log.Printf("Error creating file attachment: %v\n", err)
 			return
 		}
-		toClient.sendMessage(*mns)
 	}
-}
 
-func (h *SocketHandler) handlerStateMnsReceiver(message requests.UpdateStatusMessage) {
-	messageRepo := repositories.NewPostgresMessageRepository(db.GetDB())
-	messageService := services.NewMessageService(messageRepo)
-	messageHandler := handlers.NewMessageHandler(messageService)
-	mns, err := messageHandler.UpdateStateReceiver(message)
-	if err != nil {
+	if err := tx.Commit().Error; err != nil {
+		log.Printf("Error committing transaction: %v\n", err)
 		return
 	}
-	if toClient, ok := h.clients[strconv.Itoa(int(mns.SenderID))]; ok {
-		toClient.sendMessage(*mns)
-	}
-}
 
-func (h *SocketHandler) handlerStateMnsRead(message requests.UpdateStatusMessage) {
-	messageRepo := repositories.NewPostgresMessageRepository(db.GetDB())
-	messageService := services.NewMessageService(messageRepo)
-	messageHandler := handlers.NewMessageHandler(messageService)
-	mns, err := messageHandler.UpdateStateRead(message)
-	if err != nil {
-		return
-	}
-	if toClient, ok := h.clients[strconv.Itoa(int(mns.SenderID))]; ok {
-		toClient.sendMessage(*mns)
-	}
-}
+	// send message to receiver if online
+	if conn, ok := h.clients.Load(msg.ReceiverID); ok {
+		wsConn := conn.(*websocket.Conn)
+		err := wsConn.WriteJSON(dto.WSMessage{
+			Type:            "new_message",
+			SenderID:        senderID,
+			ReceiverID:      msg.ReceiverID,
+			Body:            msg.Body,
+			AESKeySender:    msg.AESKeySender,
+			AESKeyReceiver:  msg.AESKeyReceiver,
+			MessageID:       message.ID,
+			Status:          message.State,
+			FileAttachments: msg.FileAttachments,
+		})
 
-func (h *SocketHandler) broadcast(message response.NewMessageResponse, exceptUserId string) {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
+		if err != nil {
+			log.Println("Error sending message to receiver:", err)
+		} else {
+			message.State = "delivered"
+			h.db.Save(&message)
+		}
+	}
 
-	for userId, client := range h.clients {
-		if userId != exceptUserId {
-			client.sendMessage(message)
+	// send confirmation to sender
+	confirmMsg := dto.WSMessage{
+		Type:      "message_sent",
+		MessageID: message.ID,
+		Status:    message.State,
+	}
+
+	if conn, ok := h.clients.Load(senderID); ok {
+		err := conn.(*websocket.Conn).WriteJSON(confirmMsg)
+		if err != nil {
+			log.Println("Error sending message confirmation to sender:", err)
 		}
 	}
 }
 
-func (c *Client) sendMessage(message response.NewMessageResponse) {
-	c.Mu.Lock()
-	defer c.Mu.Unlock()
-	if err := c.Conn.WriteJSON(message); err != nil {
-		fmt.Printf("error sending message: %v\n", err)
+func (h *SocketHandler) handleStatusUpdate(userID uint, msg *dto.WSMessage) {
+	var message domain.Message
+	if err := h.db.First(&message, msg.MessageID).Error; err != nil {
+		log.Println("Error finding message:", err)
+		return
+	}
+
+	if message.ReceiverID != userID {
+		log.Println("User does not have permission to update message status")
+		return
+	}
+
+	message.State = msg.Status
+	if err := h.db.Save(&message).Error; err != nil {
+		log.Println("Error updating message status:", err)
+		return
+	}
+
+	if conn, ok := h.clients.Load(message.SenderID); ok {
+		err := conn.(*websocket.Conn).WriteJSON(dto.WSMessage{
+			Type:      "status_update",
+			MessageID: msg.MessageID,
+			Status:    msg.Status,
+		})
+		if err != nil {
+			log.Println("Error sending status update to sender:", err)
+		}
+	}
+}
+
+func (h *SocketHandler) handleReadReceipt(userID uint, msg *dto.WSMessage) {
+	var message domain.Message
+	if err := h.db.First(&message, msg.MessageID).Error; err != nil {
+		log.Println("Error finding message:", err)
+		return
+	}
+
+	if message.ReceiverID != userID {
+		log.Println("User does not have permission to read message")
+		return
+	}
+
+	message.State = "read"
+	if err := h.db.Save(&message).Error; err != nil {
+		log.Println("Error updating message status:", err)
+		return
+	}
+
+	readMsg := dto.WSMessage{
+		Type:      "status_update",
+		MessageID: msg.MessageID,
+		Status:    "read",
+	}
+
+	if conn, ok := h.clients.Load(message.SenderID); ok {
+		err := conn.(*websocket.Conn).WriteJSON(readMsg)
+		if err != nil {
+			log.Println("Error sending read receipt to sender:", err)
+		}
 	}
 }

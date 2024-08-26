@@ -29,7 +29,7 @@ func main() {
 	userRepo := repositories.NewPostgresUserRepository(db.GetDB())
 	userService := services.NewUserService(userRepo)
 	userHandler := handlers.NewUserHandler(userService)
-	socketHandler := socket.NewSocketHandler()
+	socketHandler := socket.NewSocketHandler(db.GetDB())
 
 	mnsRepo := repositories.NewPostgresMessageRepository(db.GetDB())
 	mnsService := services.NewMessageService(mnsRepo)

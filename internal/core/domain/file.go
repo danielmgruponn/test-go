@@ -1,7 +1,7 @@
 package domain
 
 type FileAttachment struct {
-	ID        uint
+	ID        uint `gorm:"primary_key"`
 	MessageID uint `gorm:"index"`
 	FileName  string
 	FileType  string

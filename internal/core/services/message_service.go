@@ -17,13 +17,12 @@ func NewMessageService(messageRepo ports.MessageRepository) ports.MessageService
 
 func (s *messageService) SaveMessage(message requests.BodyMessageRequest) (*response.NewMessageResponse, error) {
 	messageNew := &domain.Message{
-		SenderID: int(message.SenderID),
-		ReceiverID: int(message.ReceiverID),
-		Body: message.Content,
-		State: message.Status,
-		AesKeySender: message.AESKeySender,
+		SenderID:       message.SenderID,
+		ReceiverID:     message.ReceiverID,
+		Body:           message.Content,
+		State:          message.Status,
+		AESKeySender:   message.AESKeySender,
 		AESKeyReceiver: message.AESKeyReceiver,
-		NumberAttachments: message.FileAttachments,
 	}
 
 	newMns, err := s.messageRepo.CreateMessage(messageNew)
@@ -32,13 +31,13 @@ func (s *messageService) SaveMessage(message requests.BodyMessageRequest) (*resp
 	}
 
 	return &response.NewMessageResponse{
-		ID: 			newMns.ID,
+		ID:             newMns.ID,
 		SenderID:       uint(messageNew.SenderID),
 		ReceiverID:     uint(messageNew.ReceiverID),
 		Content:        messageNew.Body,
 		Status:         messageNew.State,
 		ExpiresAt:      "",
-		AESKeySender:   messageNew.AesKeySender,
+		AESKeySender:   messageNew.AESKeySender,
 		AESKeyReceiver: messageNew.AESKeyReceiver,
 		Event:          "chat",
 	}, nil
@@ -56,13 +55,13 @@ func (s *messageService) UpdateStateMessage(message requests.UpdateStatusMessage
 	}
 
 	return &response.NewMessageResponse{
-		ID: 			newMns.ID,
+		ID:             newMns.ID,
 		SenderID:       uint(newMns.SenderID),
 		ReceiverID:     uint(newMns.ReceiverID),
 		Content:        newMns.Body,
 		Status:         state,
 		ExpiresAt:      "",
-		AESKeySender:   newMns.AesKeySender,
+		AESKeySender:   newMns.AESKeySender,
 		AESKeyReceiver: newMns.AESKeyReceiver,
 		Event:          "receiver_mns",
 	}, nil
