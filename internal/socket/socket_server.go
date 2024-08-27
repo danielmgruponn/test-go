@@ -91,16 +91,16 @@ func (h *SocketHandler) handleNewMessage(senderID uint, msg *dto.WSMessage) {
 	log.Printf("File attachments: %v\n", fileUploads)
 
 	newMessage, err := h.messageHandler.CreateMessage(dto.Message{
-		Event:           "message",
-		SenderID:        senderID,
-		ReceiverID:      msg.ReceiverID,
-		Body:            msg.Body,
-		AESKeySender:    msg.AESKeySender,
-		AESKeyReceiver:  msg.AESKeyReceiver,
-		Type:            msg.Type,
-		State:           msg.State,
-		ExpiresAt:       t,
-		FileAttachments: len(fileUploads),
+		Event:             "message",
+		SenderID:          senderID,
+		ReceiverID:        msg.ReceiverID,
+		Body:              msg.Body,
+		AESKeySender:      msg.AESKeySender,
+		AESKeyReceiver:    msg.AESKeyReceiver,
+		Type:              msg.Type,
+		State:             msg.State,
+		ExpiresAt:         t,
+		NumberAttachments: uint(len(fileUploads)),
 	})
 
 	if err != nil {
@@ -141,12 +141,64 @@ func (h *SocketHandler) handleNewMessage(senderID uint, msg *dto.WSMessage) {
 			log.Println("Error sending message:", err)
 		}
 	}
+
+	// Send confirmation to sender
+	if conn, ok := h.clients.Load(senderID); ok {
+		wsConn := conn.(*websocket.Conn)
+		if err := wsConn.WriteJSON(dto.WSMessage{
+			Type:            "message_sent",
+			SenderID:        senderID,
+			ReceiverID:      msg.ReceiverID,
+			Body:            msg.Body,
+			AESKeySender:    msg.AESKeySender,
+			AESKeyReceiver:  msg.AESKeyReceiver,
+			MessageID:       newMessage.ID,
+			State:           "delivered",
+			FileAttachments: msg.FileAttachments,
+		}); err != nil {
+			log.Println("Error sending message:", err)
+		}
+	}
 }
 
 func (h *SocketHandler) handleStatusUpdate(userID uint, msg *dto.WSMessage) {
+	err := h.messageHandler.UpdateMessageState(userID, msg.MessageID, msg.State)
+	if err != nil {
+		log.Println("Error updating message state:", err)
+		return
+	}
 
+	if conn, ok := h.clients.Load(msg.ReceiverID); ok {
+		wsConn := conn.(*websocket.Conn)
+		if err := wsConn.WriteJSON(dto.WSMessage{
+			Type:       "status_update",
+			SenderID:   userID,
+			ReceiverID: msg.ReceiverID,
+			MessageID:  msg.MessageID,
+			State:      msg.State,
+		}); err != nil {
+			log.Println("Error sending message:", err)
+		}
+	}
 }
 
 func (h *SocketHandler) handleReadReceipt(userID uint, msg *dto.WSMessage) {
+	err := h.messageHandler.UpdateMessageState(userID, msg.MessageID, msg.State)
+	if err != nil {
+		log.Println("Error updating message state:", err)
+		return
+	}
 
+	if conn, ok := h.clients.Load(msg.ReceiverID); ok {
+		wsConn := conn.(*websocket.Conn)
+		if err := wsConn.WriteJSON(dto.WSMessage{
+			Type:       "status_update",
+			SenderID:   userID,
+			ReceiverID: msg.ReceiverID,
+			MessageID:  msg.MessageID,
+			State:      msg.State,
+		}); err != nil {
+			log.Println("Error sending message:", err)
+		}
+	}
 }

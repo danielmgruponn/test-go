@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"strconv"
 	"test-go/internal/core/ports"
 	"test-go/internal/dto"
@@ -9,15 +10,15 @@ import (
 	"test-go/internal/services"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 type MessageHandler struct {
 	messageService ports.MessageService
+	userService    ports.UserService
 }
 
-func NewMessageHandler(messageService ports.MessageService) *MessageHandler {
-	return &MessageHandler{messageService: messageService}
+func NewMessageHandler(messageService ports.MessageService, userService ports.UserService) *MessageHandler {
+	return &MessageHandler{messageService: messageService, userService: userService}
 }
 
 func (h *MessageHandler) CreateMessage(m dto.Message) (*response.NewMessageResponse, error) {
@@ -46,12 +47,15 @@ func (h *MessageHandler) CreateMessage(m dto.Message) (*response.NewMessageRespo
 }
 
 func (h *MessageHandler) GetMessages(c *fiber.Ctx) error {
-	user := c.Locals("user").(jwt.MapClaims)
-	id, ok := user["id"].(float64)
-	if !ok {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error al obtener mensajes"})
+	log.Printf("GetMessages")
+	id := c.Locals("id").(float64)
+
+	partnerID, err := strconv.ParseUint(c.Query("partner_id"), 10, 32)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid partner_id"})
 	}
-	messages, err := h.messageService.GetMyMessages(uint(id))
+
+	messages, err := h.messageService.GetMessagesBySenderAndReceiver(uint(id), uint(partnerID))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error al obtener mensajes"})
 	}

@@ -13,31 +13,22 @@ func AuthMiddleware() fiber.Handler {
 
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Falta el token de autorización",
-			})
+			return c.Status(401).JSON(fiber.Map{"error": "Missing auth token"})
 		}
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			return []byte(os.Getenv("JWT_SECRET_KEY")), nil
 		})
 
 		if err != nil || !token.Valid {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Token inválido",
-			})
+			return c.Status(401).JSON(fiber.Map{"error": "Invalid auth token"})
 		}
 
-		claims, ok := token.Claims.(jwt.MapClaims)
-		if !ok {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "No se pudieron procesar las claims del token",
-			})
-		}
+		claims := token.Claims.(jwt.MapClaims)
+		c.Locals("username", claims["username"])
+		c.Locals("id", claims["id"])
 
-		c.Locals("user", claims)
 		return c.Next()
 	}
 }

@@ -65,3 +65,18 @@ func (s *userService) GetUserById(id string) (dto.UserDTO, error) {
 
 	return response, nil
 }
+
+func (s *userService) GetUserByNickname(nickname string) (dto.UserDTO, error) {
+	response := dto.UserDTO{}
+	user, err := s.userRepo.FindByNickname(nickname)
+	if err != nil {
+		return response, err
+	}
+
+	response.ID = user.ID
+	response.NickName = user.NickName
+	response.PrivateKey = user.PrivateKey
+	response.PublicKey = user.PublicKey
+
+	return response, nil
+}

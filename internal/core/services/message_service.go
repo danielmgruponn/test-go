@@ -17,13 +17,14 @@ func NewMessageService(messageRepo ports.MessageRepository) ports.MessageService
 
 func (s *messageService) SaveMessage(message dto.Message) (*response.NewMessageResponse, error) {
 	messageNew := &domain.Message{
-		SenderID:       message.SenderID,
-		ReceiverID:     message.ReceiverID,
-		Body:           message.Body,
-		State:          message.State,
-		AESKeySender:   message.AESKeySender,
-		AESKeyReceiver: message.AESKeyReceiver,
-		ExpiredAt:      message.ExpiresAt,
+		SenderID:          message.SenderID,
+		ReceiverID:        message.ReceiverID,
+		Body:              message.Body,
+		State:             message.State,
+		AESKeySender:      message.AESKeySender,
+		AESKeyReceiver:    message.AESKeyReceiver,
+		ExpiredAt:         message.ExpiresAt,
+		NumberAttachments: message.NumberAttachments,
 	}
 
 	newMns, err := s.messageRepo.CreateMessage(messageNew)
@@ -48,4 +49,8 @@ func (s *messageService) UpdateStateMessage(messageId uint, state string) error 
 	}
 
 	return nil
+}
+
+func (s *messageService) GetMessagesBySenderAndReceiver(senderID, receiverID uint) ([]domain.Message, error) {
+	return s.messageRepo.FindBySenderAndReceiverId(senderID, receiverID)
 }

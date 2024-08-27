@@ -32,7 +32,7 @@ func main() {
 
 	mnsRepo := repositories.NewPostgresMessageRepository(db.GetDB())
 	mnsService := services.NewMessageService(mnsRepo)
-	mnsHandler := handlers.NewMessageHandler(mnsService)
+	mnsHandler := handlers.NewMessageHandler(mnsService, userService)
 
 	fileRepo := repositories.NewPostgresFileRepository(db.GetDB())
 	fileService := services.NewFileService(s3Client, fileRepo)

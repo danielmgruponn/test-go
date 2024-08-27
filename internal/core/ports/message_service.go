@@ -10,4 +10,5 @@ type MessageService interface {
 	SaveMessage(message dto.Message) (*response.NewMessageResponse, error)
 	GetMyMessages(id uint) ([]domain.Message, error)
 	UpdateStateMessage(messageID uint, state string) error
+	GetMessagesBySenderAndReceiver(senderID, receiverID uint) ([]domain.Message, error)
 }

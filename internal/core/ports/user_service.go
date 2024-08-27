@@ -6,4 +6,5 @@ type UserService interface {
 	Register(user *dto.RegisterRequest) (uint, error)
 	Login(nickname string) (dto.LoginResponse, error)
 	GetUserById(id string) (dto.UserDTO, error)
+	GetUserByNickname(nickname string) (dto.UserDTO, error)
 }
