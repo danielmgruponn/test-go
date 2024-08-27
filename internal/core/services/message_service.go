@@ -4,7 +4,6 @@ import (
 	"test-go/internal/core/domain"
 	"test-go/internal/core/ports"
 	"test-go/internal/dto"
-	"test-go/internal/requests"
 	"test-go/internal/response"
 )
 
@@ -37,18 +36,16 @@ func (s *messageService) SaveMessage(message dto.Message) (*response.NewMessageR
 	}, nil
 }
 
-func (s *messageService) GetMyMessages(userId int) ([]domain.Message, error) {
-	return s.messageRepo.FindById(userId)
+func (s *messageService) GetMyMessages(id uint) ([]domain.Message, error) {
+	return s.messageRepo.FindByUserId(id)
 }
 
-func (s *messageService) UpdateStateMessage(message requests.UpdateStatusMessage, state string) (*response.NewMessageResponse, error) {
+func (s *messageService) UpdateStateMessage(messageId uint, state string) error {
 
-	newMns, err := s.messageRepo.UpdateStateByMnsId(message.MessageId, state)
+	_, err := s.messageRepo.UpdateStateByMnsId(messageId, state)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &response.NewMessageResponse{
-		ID: newMns.ID,
-	}, nil
+	return nil
 }

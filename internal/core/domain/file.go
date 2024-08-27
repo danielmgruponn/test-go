@@ -10,5 +10,5 @@ type FileAttachment struct {
 }
 
 func (FileAttachment) TableFileAttachment() string {
-	return "attachments"
+	return "file_attachments"
 }

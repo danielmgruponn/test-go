@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"test-go/internal/core/ports"
 	"test-go/internal/dto"
-	"test-go/internal/requests"
 	"test-go/internal/response"
 	"test-go/internal/services"
 
@@ -46,29 +45,13 @@ func (h *MessageHandler) CreateMessage(m dto.Message) (*response.NewMessageRespo
 	return mns, nil
 }
 
-func (h *MessageHandler) UpdateStateReceiver(m requests.UpdateStatusMessage) (*response.NewMessageResponse, error) {
-	mns, err := h.messageService.UpdateStateMessage(m, "2")
-	if err != nil {
-		return nil, err
-	}
-	return mns, nil
-}
-
-func (h *MessageHandler) UpdateStateRead(m requests.UpdateStatusMessage) (*response.NewMessageResponse, error) {
-	mns, err := h.messageService.UpdateStateMessage(m, "3")
-	if err != nil {
-		return nil, err
-	}
-	return mns, nil
-}
-
 func (h *MessageHandler) GetMessages(c *fiber.Ctx) error {
 	user := c.Locals("user").(jwt.MapClaims)
 	id, ok := user["id"].(float64)
 	if !ok {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error al obtener mensajes"})
 	}
-	messages, err := h.messageService.GetMyMessages(int(id))
+	messages, err := h.messageService.GetMyMessages(uint(id))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error al obtener mensajes"})
 	}
@@ -105,4 +88,8 @@ func structToStringMap(inter interface{}) (map[string]string, error) {
 		}
 	}
 	return strMap, nil
+}
+
+func (h *MessageHandler) UpdateMessageState(userId, messageId uint, messageState string) error {
+	return h.messageService.UpdateStateMessage(messageId, messageState)
 }
