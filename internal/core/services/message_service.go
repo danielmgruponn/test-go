@@ -3,6 +3,7 @@ package services
 import (
 	"test-go/internal/core/domain"
 	"test-go/internal/core/ports"
+	"test-go/internal/dto"
 	"test-go/internal/requests"
 	"test-go/internal/response"
 )
@@ -15,14 +16,15 @@ func NewMessageService(messageRepo ports.MessageRepository) ports.MessageService
 	return &messageService{messageRepo: messageRepo}
 }
 
-func (s *messageService) SaveMessage(message requests.BodyMessageRequest) (*response.NewMessageResponse, error) {
+func (s *messageService) SaveMessage(message dto.Message) (*response.NewMessageResponse, error) {
 	messageNew := &domain.Message{
 		SenderID:       message.SenderID,
 		ReceiverID:     message.ReceiverID,
-		Body:           message.Content,
-		State:          message.Status,
+		Body:           message.Body,
+		State:          message.State,
 		AESKeySender:   message.AESKeySender,
 		AESKeyReceiver: message.AESKeyReceiver,
+		ExpiredAt:      message.ExpiresAt,
 	}
 
 	newMns, err := s.messageRepo.CreateMessage(messageNew)
@@ -31,15 +33,7 @@ func (s *messageService) SaveMessage(message requests.BodyMessageRequest) (*resp
 	}
 
 	return &response.NewMessageResponse{
-		ID:             newMns.ID,
-		SenderID:       uint(messageNew.SenderID),
-		ReceiverID:     uint(messageNew.ReceiverID),
-		Content:        messageNew.Body,
-		Status:         messageNew.State,
-		ExpiresAt:      "",
-		AESKeySender:   messageNew.AESKeySender,
-		AESKeyReceiver: messageNew.AESKeyReceiver,
-		Event:          "chat",
+		ID: newMns.ID,
 	}, nil
 }
 
@@ -55,14 +49,6 @@ func (s *messageService) UpdateStateMessage(message requests.UpdateStatusMessage
 	}
 
 	return &response.NewMessageResponse{
-		ID:             newMns.ID,
-		SenderID:       uint(newMns.SenderID),
-		ReceiverID:     uint(newMns.ReceiverID),
-		Content:        newMns.Body,
-		Status:         state,
-		ExpiresAt:      "",
-		AESKeySender:   newMns.AESKeySender,
-		AESKeyReceiver: newMns.AESKeyReceiver,
-		Event:          "receiver_mns",
+		ID: newMns.ID,
 	}, nil
 }

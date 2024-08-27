@@ -3,6 +3,7 @@ package db
 import (
 	"log"
 	"os"
+	"test-go/internal/core/domain"
 
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
@@ -29,6 +30,8 @@ func Initialize() {
 	if err != nil {
 		log.Fatalf("Error al conectar a la base de datos: %v", err)
 	}
+
+	db.AutoMigrate(&domain.User{}, &domain.Message{}, &domain.FileAttachment{})
 }
 
 func GetDB() *gorm.DB {

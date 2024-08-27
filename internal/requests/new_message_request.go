@@ -1,14 +1,14 @@
 package requests
 
 type BodyMessageRequest struct {
-	Event			string `json:"event"`
+	Event           string `json:"event"`
 	SenderID        uint   `json:"sender_id"`
 	ReceiverID      uint   `json:"receiver_id"`
-	Content         string `json:"content"`
+	Body            string `json:"body"`
 	AESKeySender    string `json:"aes_key_sender,omitempty"`
 	AESKeyReceiver  string `json:"aes_key_receiver,omitempty"`
 	Type            string `json:"type"`
 	Status          string `json:"status,omitempty"`
 	ExpiresAt       string `json:"expires_at,omitempty"`
-	FileAttachments int 	`json:"file_attachments,omitempty"`
+	FileAttachments int    `json:"file_attachments,omitempty"`
 }

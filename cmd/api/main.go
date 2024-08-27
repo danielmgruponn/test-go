@@ -29,15 +29,16 @@ func main() {
 	userRepo := repositories.NewPostgresUserRepository(db.GetDB())
 	userService := services.NewUserService(userRepo)
 	userHandler := handlers.NewUserHandler(userService)
-	socketHandler := socket.NewSocketHandler(db.GetDB())
 
 	mnsRepo := repositories.NewPostgresMessageRepository(db.GetDB())
 	mnsService := services.NewMessageService(mnsRepo)
 	mnsHandler := handlers.NewMessageHandler(mnsService)
 
-	fileService := services.NewFileService(s3Client)
+	fileRepo := repositories.NewPostgresFileRepository(db.GetDB())
+	fileService := services.NewFileService(s3Client, fileRepo)
 	fileHandler := handlers.NewFileHandler(fileService)
 
+	socketHandler := socket.NewSocketHandler(mnsHandler, userHandler, fileHandler)
 	webRTC := handlers.NewWebRTCHandler()
 
 	// Crear la aplicación Fiber

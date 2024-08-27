@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"mime/multipart"
+	"test-go/internal/core/domain"
+	"test-go/internal/core/ports"
 	"test-go/internal/dto"
 	"time"
 
@@ -16,10 +18,11 @@ import (
 
 type FileService struct {
 	s3Client *s3.Client
+	fileRepo ports.FileRepository
 }
 
-func NewFileService(s3Client *s3.Client) *FileService {
-	return &FileService{s3Client: s3Client}
+func NewFileService(s3Client *s3.Client, fileRepo ports.FileRepository) *FileService {
+	return &FileService{s3Client: s3Client, fileRepo: fileRepo}
 }
 
 func (f *FileService) UploadFiles(files []*multipart.FileHeader) ([]dto.FileUpload, error) {
@@ -74,4 +77,21 @@ func (f *FileService) UploadFiles(files []*multipart.FileHeader) ([]dto.FileUplo
 		fileAttachments = append(fileAttachments, fileUpload)
 	}
 	return fileAttachments, nil
+}
+
+func (f *FileService) SaveFile(file *dto.FileAttachment) (dto.NewFileAttachment, error) {
+	fileAttachment := domain.FileAttachment{
+		MessageID: file.MessageID,
+		FileName:  file.FileName,
+		FileType:  file.FileType,
+		FileSize:  file.FileSize,
+		FileURL:   file.FileURL,
+	}
+	err := f.fileRepo.Create(&fileAttachment)
+	if err != nil {
+		return dto.NewFileAttachment{}, err
+	}
+	return dto.NewFileAttachment{
+		ID: fileAttachment.ID,
+	}, nil
 }

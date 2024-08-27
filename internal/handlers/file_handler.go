@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"test-go/internal/core/ports"
+	"test-go/internal/dto"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -31,4 +32,14 @@ func (f *FileHandler) UploadFiles(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(updloadFiles)
+}
+
+func (f *FileHandler) SaveFile(file dto.FileAttachment) (*dto.NewFileAttachment, error) {
+	newFile, err := f.fileService.SaveFile(&file)
+	if err != nil {
+		return nil, err
+	}
+
+	return &newFile, nil
+
 }

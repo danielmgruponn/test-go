@@ -13,3 +13,12 @@ func MapUserDomainToDTO(user *domain.User) *dto.UserDTO {
 		PrivateKey: user.PrivateKey,
 	}
 }
+
+func MapUserDTOToDomain(user *dto.UserDTO) *domain.User {
+	return &domain.User{
+		ID:         user.ID,
+		Nickname:   user.NickName,
+		PublicKey:  user.PublicKey,
+		PrivateKey: user.PrivateKey,
+	}
+}

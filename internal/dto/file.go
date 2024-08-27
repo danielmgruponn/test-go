@@ -6,3 +6,15 @@ type FileUpload struct {
 	FileSize int64  `json:"file_size"`
 	FileURL  string `json:"file_url"`
 }
+
+type FileAttachment struct {
+	MessageID uint   `json:"message_id"`
+	FileName  string `json:"file_name"`
+	FileType  string `json:"file_type"`
+	FileSize  int64  `json:"file_size"`
+	FileURL   string `json:"file_url"`
+}
+
+type NewFileAttachment struct {
+	ID uint `json:"id"`
+}
