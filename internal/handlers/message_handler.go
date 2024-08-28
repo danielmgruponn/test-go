@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"test-go/internal/core/ports"
 	"test-go/internal/dto"
+	"test-go/internal/mappers"
 	"test-go/internal/response"
 	"test-go/internal/services"
 
@@ -59,7 +60,8 @@ func (h *MessageHandler) GetMessages(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error al obtener mensajes"})
 	}
-	return c.Status(fiber.StatusOK).JSON(messages)
+	messagesDTO := mappers.MapMessagesDomainToDTO(messages)
+	return c.Status(fiber.StatusOK).JSON(messagesDTO)
 }
 
 func structToStringMap(inter interface{}) (map[string]string, error) {

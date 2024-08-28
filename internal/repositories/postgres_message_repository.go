@@ -49,7 +49,12 @@ func (r *postgresMessageRepository) FindByUserId(id uint) ([]domain.Message, err
 func (r *postgresMessageRepository) FindBySenderAndReceiverId(senderId, receiverId uint) ([]domain.Message, error) {
 	var mns domain.Message
 	var messages []domain.Message
-	err := r.db.Table(mns.TableMessages()).Where("sender_id = ? AND receiver_id = ?", senderId, receiverId).Order("created_at ASC").Find(&messages).Error
+	err := r.db.Table(mns.TableMessages()).
+		Where("(sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)",
+			senderId, receiverId, receiverId, senderId).
+		Preload("FileAttachments").
+		Order("created_at ASC").
+		Find(&messages).Error
 	if err != nil {
 		return nil, err
 	}

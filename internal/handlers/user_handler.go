@@ -50,10 +50,10 @@ func (h *UserHandler) GetUserById(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID inválido"})
 	}
 
-	userID, err := h.userService.GetUserById(id)
+	user, err := h.userService.GetUserById(id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Usuario no encontrado"})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(userID)
+	return c.Status(fiber.StatusOK).JSON(user)
 }

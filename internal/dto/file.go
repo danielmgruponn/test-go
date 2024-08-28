@@ -1,18 +1,18 @@
 package dto
 
 type FileUpload struct {
-	FileName string `json:"file_name"`
-	FileType string `json:"file_type"`
-	FileSize int64  `json:"file_size"`
-	FileURL  string `json:"file_url"`
+	FileName string `json:"fileName"`
+	FileType string `json:"fileType"`
+	FileSize int64  `json:"fileSize"`
+	FileURL  string `json:"fileUrl"`
 }
 
 type FileAttachment struct {
-	MessageID uint   `json:"message_id"`
-	FileName  string `json:"file_name"`
-	FileType  string `json:"file_type"`
-	FileSize  int64  `json:"file_size"`
-	FileURL   string `json:"file_url"`
+	MessageID uint   `json:"messageId"`
+	FileName  string `json:"fileName"`
+	FileType  string `json:"fileType"`
+	FileSize  int64  `json:"fileSize"`
+	FileURL   string `json:"fileUrl"`
 }
 
 type NewFileAttachment struct {

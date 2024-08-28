@@ -37,13 +37,13 @@ func (s *userService) Login(nickname string) (dto.LoginResponse, error) {
 		return response, err
 	}
 
-	jwt, err := jwt.GenerateToken(user.ID, user.NickName)
+	jwt, err := jwt.GenerateToken(user.ID, user.Nickname)
 	if err != nil {
 		return response, err
 	}
 
 	response.ID = user.ID
-	response.NickName = user.NickName
+	response.Nickname = user.Nickname
 	response.Token = jwt
 	response.PrivateKey = user.PrivateKey
 	response.PublicKey = user.PublicKey
@@ -59,7 +59,7 @@ func (s *userService) GetUserById(id string) (dto.UserDTO, error) {
 	}
 
 	response.ID = user.ID
-	response.NickName = user.NickName
+	response.Nickname = user.Nickname
 	response.PrivateKey = user.PrivateKey
 	response.PublicKey = user.PublicKey
 
@@ -74,7 +74,7 @@ func (s *userService) GetUserByNickname(nickname string) (dto.UserDTO, error) {
 	}
 
 	response.ID = user.ID
-	response.NickName = user.NickName
+	response.Nickname = user.Nickname
 	response.PrivateKey = user.PrivateKey
 	response.PublicKey = user.PublicKey
 

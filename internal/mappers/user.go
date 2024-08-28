@@ -8,7 +8,7 @@ import (
 func MapUserDomainToDTO(user *domain.User) *dto.UserDTO {
 	return &dto.UserDTO{
 		ID:         user.ID,
-		NickName:   user.Nickname,
+		Nickname:   user.Nickname,
 		PublicKey:  user.PublicKey,
 		PrivateKey: user.PrivateKey,
 	}
@@ -17,7 +17,7 @@ func MapUserDomainToDTO(user *domain.User) *dto.UserDTO {
 func MapUserDTOToDomain(user *dto.UserDTO) *domain.User {
 	return &domain.User{
 		ID:         user.ID,
-		Nickname:   user.NickName,
+		Nickname:   user.Nickname,
 		PublicKey:  user.PublicKey,
 		PrivateKey: user.PrivateKey,
 	}
