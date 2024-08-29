@@ -17,7 +17,7 @@ type FCMClient struct {
 }
 
 type FirebaseCredentials struct {
-    ProjectID string `json:"project_id"`
+	ProjectID string `json:"project_id"`
 }
 
 func NewFCMClient() (*FCMClient, error) {
@@ -25,15 +25,15 @@ func NewFCMClient() (*FCMClient, error) {
 
 	data, err := os.ReadFile(credentials)
 	if err != nil {
-		fmt.Println("Error al leer el archivo de credenciales: %v", err)
+		fmt.Printf("Error al leer el archivo de credenciales: %s\n", err)
 	}
 
 	var credential FirebaseCredentials
 
 	err = json.Unmarshal(data, &credential)
-    if err != nil {
-        log.Fatalf("error unmarshalling credentials: %v\n", err)
-    }
+	if err != nil {
+		log.Fatalf("error unmarshalling credentials: %v\n", err)
+	}
 
 	projectID := credential.ProjectID
 
@@ -60,7 +60,7 @@ func (s *FCMClient) SendMessage(token, title, body string, data map[string]strin
 		Token: token,
 		Notification: &messaging.Notification{
 			Title: title,
-			Body: body,
+			Body:  body,
 		},
 		Data: data,
 	}

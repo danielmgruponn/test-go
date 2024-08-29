@@ -2,13 +2,13 @@ package dto
 
 type WSMessage struct {
 	Type            string `json:"type"`
-	SenderID        uint   `json:"sender_id"`
-	ReceiverID      uint   `json:"receiver_id"`
+	SenderID        uint   `json:"senderId"`
+	ReceiverID      uint   `json:"receiverId"`
 	Body            string `json:"body"`
-	AESKeySender    string `json:"aes_key_sender,omitempty"`
-	AESKeyReceiver  string `json:"aes_key_receiver,omitempty"`
-	MessageID       uint   `json:"message_id,omitempty"`
+	AESKeySender    string `json:"aesKeySender,omitempty"`
+	AESKeyReceiver  string `json:"aesKeyReceiver,omitempty"`
+	MessageID       uint   `json:"messageId,omitempty"`
 	State           string `json:"state,omitempty"`
-	ExpiresAt       string `json:"expires_at,omitempty"`
-	FileAttachments string `json:"file_attachments,omitempty"`
+	ExpiredAt       string `json:"expiredAt,omitempty"`
+	FileAttachments string `json:"fileAttachments,omitempty"`
 }

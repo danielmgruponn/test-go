@@ -43,7 +43,7 @@ func MapMessagesDomainToDTO(messages []domain.Message) []dto.MessageDTO {
 			Body:              message.Body,
 			State:             message.State,
 			AESKeySender:      message.AESKeySender,
-			AESKeyReceiver:    message.AESKeySender,
+			AESKeyReceiver:    message.AESKeyReceiver,
 			CreatedAt:         message.CreatedAt,
 			ExpiredAt:         message.ExpiredAt,
 			NumberAttachments: message.NumberAttachments,

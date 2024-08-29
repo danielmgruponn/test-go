@@ -1,7 +1,7 @@
 package dto
 
 type RegisterRequest struct {
-	NickName   string `json:"nickName"`
+	Nickname   string `json:"nickname"`
 	PrivateKey string `json:"privateKey"`
 	PublicKey  string `json:"publicKey"`
 }

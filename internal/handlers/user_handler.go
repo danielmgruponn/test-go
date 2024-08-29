@@ -3,6 +3,7 @@ package handlers
 import (
 	"test-go/internal/core/ports"
 	"test-go/internal/dto"
+	"test-go/internal/mappers"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -55,5 +56,7 @@ func (h *UserHandler) GetUserById(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Usuario no encontrado"})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(user)
+	u := mappers.MapUserDTOToSafeDTO(&user)
+
+	return c.Status(fiber.StatusOK).JSON(u)
 }

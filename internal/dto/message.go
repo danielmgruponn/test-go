@@ -24,7 +24,7 @@ type MessageDTO struct {
 	AESKeySender      string           `json:"aesKeySender,omitempty"`
 	AESKeyReceiver    string           `json:"aesKeyReceiver,omitempty"`
 	CreatedAt         time.Time        `json:"createdAt"`
-	ExpiredAt         time.Time        `json:"expiresAt,omitempty"`
+	ExpiredAt         time.Time        `json:"expiredAt,omitempty"`
 	NumberAttachments uint             `json:"numberAttachments,omitempty"`
 	FileAttachments   []FileAttachment `json:"fileAttachments,omitempty"`
 }

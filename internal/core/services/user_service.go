@@ -1,6 +1,7 @@
 package services
 
 import (
+	"log"
 	"test-go/internal/core/domain"
 	"test-go/internal/core/ports"
 	"test-go/internal/dto"
@@ -17,7 +18,7 @@ func NewUserService(userRepo ports.UserRepository) ports.UserService {
 
 func (s *userService) Register(user *dto.RegisterRequest) (uint, error) {
 	userDomain := &domain.User{
-		Nickname:   user.NickName,
+		Nickname:   user.Nickname,
 		PublicKey:  user.PublicKey,
 		PrivateKey: user.PrivateKey,
 	}
@@ -36,6 +37,7 @@ func (s *userService) Login(nickname string) (dto.LoginResponse, error) {
 	if err != nil {
 		return response, err
 	}
+	log.Printf("User found: %v", user)
 
 	jwt, err := jwt.GenerateToken(user.ID, user.Nickname)
 	if err != nil {

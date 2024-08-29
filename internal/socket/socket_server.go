@@ -59,7 +59,7 @@ func (h *SocketHandler) HandleSocket() fiber.Handler {
 				break
 			}
 
-			fmt.Println("Received message:", msg)
+			log.Println("Received message:", msg)
 
 			switch msg.Type {
 			case "message":
@@ -76,8 +76,7 @@ func (h *SocketHandler) HandleSocket() fiber.Handler {
 }
 
 func (h *SocketHandler) handleNewMessage(senderID uint, msg *dto.WSMessage) {
-
-	t, err := time.Parse(time.RFC3339, msg.ExpiresAt)
+	t, err := time.Parse(time.RFC3339, msg.ExpiredAt)
 	if err != nil {
 		return
 	}
@@ -98,7 +97,7 @@ func (h *SocketHandler) handleNewMessage(senderID uint, msg *dto.WSMessage) {
 		AESKeySender:      msg.AESKeySender,
 		AESKeyReceiver:    msg.AESKeyReceiver,
 		Type:              msg.Type,
-		State:             msg.State,
+		State:             "sent",
 		ExpiresAt:         t,
 		NumberAttachments: uint(len(fileUploads)),
 	})
@@ -107,6 +106,8 @@ func (h *SocketHandler) handleNewMessage(senderID uint, msg *dto.WSMessage) {
 		log.Println("Error creating message:", err)
 		return
 	}
+
+	log.Printf("Message created: %v\n", newMessage)
 
 	for _, file := range fileUploads {
 		fileAttachment := dto.FileAttachment{
@@ -117,17 +118,18 @@ func (h *SocketHandler) handleNewMessage(senderID uint, msg *dto.WSMessage) {
 			FileURL:   file.FileURL,
 		}
 
-		newFile, err := h.fileHandler.SaveFile(fileAttachment)
+		_, err := h.fileHandler.SaveFile(fileAttachment)
 		if err != nil {
 			log.Println("Error saving file:", err)
 			return
 		}
-		log.Printf("File saved: %v\n", newFile)
 	}
 
-	if conn, ok := h.clients.Load(msg.ReceiverID); ok {
+	// Send message to receiver
+
+	if conn, ok := h.clients.Load(strconv.Itoa(int(msg.ReceiverID))); ok {
 		wsConn := conn.(*websocket.Conn)
-		if err := wsConn.WriteJSON(dto.WSMessage{
+		err := wsConn.WriteJSON(dto.WSMessage{
 			Type:            "new_message",
 			SenderID:        senderID,
 			ReceiverID:      msg.ReceiverID,
@@ -135,15 +137,20 @@ func (h *SocketHandler) handleNewMessage(senderID uint, msg *dto.WSMessage) {
 			AESKeySender:    msg.AESKeySender,
 			AESKeyReceiver:  msg.AESKeyReceiver,
 			MessageID:       newMessage.ID,
-			State:           msg.State,
+			State:           "sent",
 			FileAttachments: msg.FileAttachments,
-		}); err != nil {
-			log.Println("Error sending message:", err)
+		})
+
+		if err != nil {
+			log.Println("Error sending message to receiver:", err)
+		} else {
+			msg.State = "delivered"
+			h.messageHandler.UpdateMessageState(senderID, newMessage.ID, msg.State)
 		}
 	}
 
 	// Send confirmation to sender
-	if conn, ok := h.clients.Load(senderID); ok {
+	if conn, ok := h.clients.Load(strconv.Itoa(int(senderID))); ok {
 		wsConn := conn.(*websocket.Conn)
 		if err := wsConn.WriteJSON(dto.WSMessage{
 			Type:            "message_sent",
@@ -162,13 +169,15 @@ func (h *SocketHandler) handleNewMessage(senderID uint, msg *dto.WSMessage) {
 }
 
 func (h *SocketHandler) handleStatusUpdate(userID uint, msg *dto.WSMessage) {
+	log.Printf("Message state: %v\n", msg.State)
+	log.Printf("Message id: %v\n", msg.MessageID)
 	err := h.messageHandler.UpdateMessageState(userID, msg.MessageID, msg.State)
 	if err != nil {
 		log.Println("Error updating message state:", err)
 		return
 	}
 
-	if conn, ok := h.clients.Load(msg.ReceiverID); ok {
+	if conn, ok := h.clients.Load(strconv.Itoa(int(msg.ReceiverID))); ok {
 		wsConn := conn.(*websocket.Conn)
 		if err := wsConn.WriteJSON(dto.WSMessage{
 			Type:       "status_update",
@@ -189,7 +198,7 @@ func (h *SocketHandler) handleReadReceipt(userID uint, msg *dto.WSMessage) {
 		return
 	}
 
-	if conn, ok := h.clients.Load(msg.ReceiverID); ok {
+	if conn, ok := h.clients.Load(strconv.Itoa(int(msg.ReceiverID))); ok {
 		wsConn := conn.(*websocket.Conn)
 		if err := wsConn.WriteJSON(dto.WSMessage{
 			Type:       "status_update",
