@@ -1,7 +1,6 @@
 package services
 
 import (
-	"log"
 	"test-go/internal/core/domain"
 	"test-go/internal/core/ports"
 	"test-go/internal/dto"
@@ -37,7 +36,6 @@ func (s *userService) Login(nickname string) (dto.LoginResponse, error) {
 	if err != nil {
 		return response, err
 	}
-	log.Printf("User found: %v", user)
 
 	jwt, err := jwt.GenerateToken(user.ID, user.Nickname)
 	if err != nil {

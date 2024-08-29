@@ -1,5 +1,5 @@
 package dto
 
 type LoginRequest struct {
-	NickName string `json:"nickName"`
+	Nickname string `json:"nickname"`
 }
