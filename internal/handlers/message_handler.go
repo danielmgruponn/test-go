@@ -8,7 +8,6 @@ import (
 	"test-go/internal/dto"
 	"test-go/internal/mappers"
 	"test-go/internal/response"
-	"test-go/internal/services"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -29,20 +28,20 @@ func (h *MessageHandler) CreateMessage(m dto.Message) (*response.NewMessageRespo
 		return nil, err
 	}
 
-	fcm, err := services.NewFCMClient()
-	if err != nil {
-		return nil, err
-	}
+	// fcm, err := services.NewFCMClient()
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	data, err := structToStringMap(mns)
-	if err != nil {
-		return nil, err
-	}
+	// data, err := structToStringMap(mns)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	err = fcm.SendMessage("eMwNLXPVQLqGcJnreBgrsE:APA91bFaUdYKZAorS7joDmoapnIPpD4jTKjU_ke5eKYYaIqyO5TB1YGfG6eBaUQKMusdiIM_vdG7ULfBwA6heTTwji4zAKVCJBuyx_W44WGwepUsk2LYHpZjC-KuZy_Mj0coZ9knqZr3", "Test nuevo Mensaje", "Test nuevo Mensaje", data)
-	if err != nil {
-		return nil, err
-	}
+	// err = fcm.SendMessage("eMwNLXPVQLqGcJnreBgrsE:APA91bFaUdYKZAorS7joDmoapnIPpD4jTKjU_ke5eKYYaIqyO5TB1YGfG6eBaUQKMusdiIM_vdG7ULfBwA6heTTwji4zAKVCJBuyx_W44WGwepUsk2LYHpZjC-KuZy_Mj0coZ9knqZr3", "Test nuevo Mensaje", "Test nuevo Mensaje", data)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	return mns, nil
 }
