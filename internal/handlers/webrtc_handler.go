@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 	"sync"
 
 	"github.com/gofiber/fiber/v2"
@@ -15,41 +16,53 @@ type WebRTCHandler struct {
 }
 
 func NewWebRTCHandler() *WebRTCHandler {
-	return &WebRTCHandler{}
+	return &WebRTCHandler{
+		clients: sync.Map{},
+	}
 }
 
-func (h *WebRTCHandler) HandlerWebRTC(c *fiber.Ctx) error {
-	userId := c.Locals("id").(string)
-	log.Printf("User %s connected to WebRTC\n", userId)
-
+func (h *WebRTCHandler) HandlerWebRTC() fiber.Handler {
 	return websocket.New(func(ws *websocket.Conn) {
-		h.clients.Store(userId, ws)
+		log.Printf("New WebRTC connection\n")
+
+		log.Printf("Locals: %v\n", ws.Locals("id"))
+		userId := ws.Locals("id").(string)
+		log.Printf("User %s connected to WebRTC\n", userId)
+
+		id, err := strconv.Atoi(userId)
+		if err != nil {
+			log.Println("Error converting userId to int:", err)
+			return
+		}
+		userIdInt := uint(id)
+		log.Printf("User %s:%d connected to WebRTC\n", userId, userIdInt)
+		h.clients.Store(userIdInt, ws)
 
 		defer func() {
-			h.clients.Delete(userId)
+			log.Printf("User %d disconnected from WebRTC\n", userIdInt)
+			h.clients.Delete(userIdInt)
 			ws.Close()
 		}()
 
 		for {
 			_, msg, err := ws.ReadMessage()
 			if err != nil {
-				fmt.Println("read error: ", err)
+				log.Printf("read error: %v\n", err)
 				break
 			}
-
+			log.Printf("Message: %v\n", string(msg))
 			var message map[string]interface{}
 			if err := json.Unmarshal(msg, &message); err != nil {
-				fmt.Println("JSON Unmarshal error: ", err)
+				log.Printf("JSON Unmarshal error: %v\n", err)
 				continue
 			}
-
-			h.handleSignal(userId, message)
+			h.handleSignal(userIdInt, message)
 		}
-	})(c)
+	})
 }
 
-func (h *WebRTCHandler) handleSignal(userId string, message map[string]interface{}) {
-	log.Printf("Handling signal from user %s\n", userId)
+func (h *WebRTCHandler) handleSignal(userId uint, message map[string]interface{}) {
+	log.Printf("Handling signal from user %d\n", userId)
 	log.Printf("Message: %v\n", message)
 	messageType, ok := message["type"].(string)
 	if !ok {

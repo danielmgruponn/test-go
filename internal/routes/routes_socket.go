@@ -6,19 +6,11 @@ import (
 	"test-go/internal/socket"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/websocket/v2"
 )
 
 func SetupSocketRoutes(app *fiber.App, socketHandler *socket.SocketHandler, webRTCController *handlers.WebRTCHandler) {
-	app.Use("/ws", func(c *fiber.Ctx) error {
-		if websocket.IsWebSocketUpgrade(c) {
-			c.Locals("allowed", true)
-			return c.Next()
-		}
-		return fiber.ErrUpgradeRequired
-	})
-
-	app.Get("/ws", middleware.WebSocketAuthMiddleware(), socketHandler.HandleSocket())
-
-	app.Get("/ws/webrtc", middleware.WebSocketAuthMiddleware(), webRTCController.HandlerWebRTC)
+	ws := app.Group("/ws")
+	ws.Use(middleware.WebSocketAuthMiddleware())
+	ws.Get("/", socketHandler.HandleSocket())
+	ws.Get("/webrtc", webRTCController.HandlerWebRTC())
 }

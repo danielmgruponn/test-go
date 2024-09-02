@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"log"
 	"os"
 	"strings"
 
@@ -26,7 +27,8 @@ func AuthMiddleware() fiber.Handler {
 		}
 
 		claims := token.Claims.(jwt.MapClaims)
-		c.Locals("username", claims["username"])
+		log.Printf("Claims User: %v\n", claims)
+		c.Locals("nickname", claims["nickname"])
 		c.Locals("id", claims["id"])
 
 		return c.Next()

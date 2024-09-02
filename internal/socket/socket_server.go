@@ -33,7 +33,8 @@ func NewSocketHandler(messageHandler *handlers.MessageHandler, userHandler *hand
 
 func (h *SocketHandler) HandleSocket() fiber.Handler {
 	return websocket.New(func(c *websocket.Conn) {
-
+		log.Printf("New WebSocket connection\n")
+		log.Printf("Locals: %v\n", c.Locals("id"))
 		userId := c.Locals("id").(string)
 		// Convert the userId to uint
 		id, err := strconv.Atoi(userId)

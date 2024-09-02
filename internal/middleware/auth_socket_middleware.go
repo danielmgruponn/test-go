@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"fmt"
+	"log"
 	"os"
-	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
@@ -15,14 +15,6 @@ func WebSocketAuthMiddleware() fiber.Handler {
 		if websocket.IsWebSocketUpgrade(c) {
 			// Get token from query parameter
 			tokenString := c.Query("token")
-
-			// If token is not in query, check Authorization header
-			if tokenString == "" {
-				authHeader := c.Get("Authorization")
-				if authHeader != "" {
-					tokenString = strings.TrimPrefix(authHeader, "Bearer ")
-				}
-			}
 
 			if tokenString == "" {
 				c.Locals("allowed", false)
@@ -37,22 +29,25 @@ func WebSocketAuthMiddleware() fiber.Handler {
 			})
 
 			if err != nil || !token.Valid {
+				log.Printf("Error parsing token: %v\n", err)
 				c.Locals("allowed", false)
 				return c.Next()
 			}
 
 			claims, ok := token.Claims.(jwt.MapClaims)
 			if !ok {
+				log.Printf("Claims error: %v\n", ok)
 				c.Locals("allowed", false)
 				return c.Next()
 			}
 
+			log.Printf("Claims 123: %v\n", claims)
+
 			c.Locals("allowed", true)
 			userID := fmt.Sprintf("%.0f", claims["id"].(float64))
 			c.Locals("id", userID)
-			c.Locals("username", claims["username"])
 
-			fmt.Printf("Authenticated user ID: %s\n", userID)
+			log.Printf("Claims 123: %v\n", c.Locals("id"))
 
 			return c.Next()
 		}
