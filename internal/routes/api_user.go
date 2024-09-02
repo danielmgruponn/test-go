@@ -11,7 +11,7 @@ import (
 func SetupRoutes(app *fiber.App, userController *handlers.UserHandler, mnsController *handlers.MessageHandler, fileController *handlers.FileHandler) {
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "https://7faa-190-84-88-236.ngrok-free.app",
+		AllowOrigins:     "http://localhost:3000",
 		AllowMethods:     "GET,POST,HEAD,PUT,DELETE,PATCH,OPTIONS",
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
 		AllowCredentials: true,
