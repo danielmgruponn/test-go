@@ -22,11 +22,7 @@ func NewWebRTCHandler() *WebRTCHandler {
 
 func (h *WebRTCHandler) HandlerWebRTC() fiber.Handler {
 	return websocket.New(func(ws *websocket.Conn) {
-		log.Printf("New WebRTC connection\n")
-
-		log.Printf("Locals: %v\n", ws.Locals("id"))
 		userId := ws.Locals("id").(string)
-		log.Printf("User %s connected to WebRTC\n", userId)
 
 		id, err := strconv.Atoi(userId)
 		if err != nil {
@@ -34,7 +30,6 @@ func (h *WebRTCHandler) HandlerWebRTC() fiber.Handler {
 			return
 		}
 		userIdInt := uint(id)
-		log.Printf("User %s:%d connected to WebRTC\n", userId, userIdInt)
 		h.clients.Store(userIdInt, ws)
 
 		defer func() {
@@ -49,7 +44,6 @@ func (h *WebRTCHandler) HandlerWebRTC() fiber.Handler {
 				log.Printf("read error: %v\n", err)
 				break
 			}
-			log.Printf("Message: %v\n", string(msg))
 			var message map[string]interface{}
 			if err := json.Unmarshal(msg, &message); err != nil {
 				log.Printf("JSON Unmarshal error: %v\n", err)
@@ -61,8 +55,6 @@ func (h *WebRTCHandler) HandlerWebRTC() fiber.Handler {
 }
 
 func (h *WebRTCHandler) handleSignal(userId string, message map[string]interface{}) {
-	log.Printf("Handling signal from user %s\n", userId)
-	log.Printf("Message: %v\n", message)
 	messageType, ok := message["type"].(string)
 	if !ok {
 		log.Println("Invalid message type")
@@ -75,15 +67,6 @@ func (h *WebRTCHandler) handleSignal(userId string, message map[string]interface
 		return
 	}
 
-	// show all clients
-	log.Printf("userId: %s", userId)
-	log.Printf("to: %s", to)
-	log.Println("All clients:")
-	h.clients.Range(func(key, value any) bool {
-		log.Printf("Client %s", key)
-		return true
-	})
-	// convert to uint
 	toUint, err := strconv.Atoi(to)
 	if err != nil {
 		log.Println("Error converting to uint:", err)

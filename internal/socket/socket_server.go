@@ -108,8 +108,6 @@ func (h *SocketHandler) handleNewMessage(senderID uint, msg *dto.WSMessage) {
 		return
 	}
 
-	log.Printf("Message created: %v\n", newMessage)
-
 	for _, file := range fileUploads {
 		fileAttachment := dto.FileAttachment{
 			MessageID: newMessage.ID,
@@ -125,8 +123,6 @@ func (h *SocketHandler) handleNewMessage(senderID uint, msg *dto.WSMessage) {
 			return
 		}
 	}
-
-	// Send message to receiver
 
 	if conn, ok := h.clients.Load(strconv.Itoa(int(msg.ReceiverID))); ok {
 		wsConn := conn.(*websocket.Conn)
@@ -150,7 +146,6 @@ func (h *SocketHandler) handleNewMessage(senderID uint, msg *dto.WSMessage) {
 		}
 	}
 
-	// Send confirmation to sender
 	if conn, ok := h.clients.Load(strconv.Itoa(int(senderID))); ok {
 		wsConn := conn.(*websocket.Conn)
 		if err := wsConn.WriteJSON(dto.WSMessage{
