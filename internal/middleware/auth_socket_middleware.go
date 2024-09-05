@@ -12,8 +12,8 @@ import (
 
 func WebSocketAuthMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		log.Println("WebSocketAuthMiddleware")
 		if websocket.IsWebSocketUpgrade(c) {
-			// Get token from query parameter
 			tokenString := c.Query("token")
 
 			if tokenString == "" {
@@ -29,25 +29,26 @@ func WebSocketAuthMiddleware() fiber.Handler {
 			})
 
 			if err != nil || !token.Valid {
-				log.Printf("Error parsing token: %v\n", err)
 				c.Locals("allowed", false)
 				return c.Next()
 			}
 
 			claims, ok := token.Claims.(jwt.MapClaims)
 			if !ok {
-				log.Printf("Claims error: %v\n", ok)
 				c.Locals("allowed", false)
 				return c.Next()
 			}
 
-			log.Printf("Claims 123: %v\n", claims)
-
 			c.Locals("allowed", true)
-			userID := fmt.Sprintf("%.0f", claims["id"].(float64))
-			c.Locals("id", userID)
 
-			log.Printf("Claims 123: %v\n", c.Locals("id"))
+			if id, ok := claims["id"].(float64); ok {
+				c.Locals("id", uint(id))
+			}
+
+			if nickname, ok := claims["nickname"].(string); ok {
+				log.Printf("Nickname: %s\n", nickname)
+				c.Locals("nickname", nickname)
+			}
 
 			return c.Next()
 		}

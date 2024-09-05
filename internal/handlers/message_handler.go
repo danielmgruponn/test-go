@@ -48,14 +48,14 @@ func (h *MessageHandler) CreateMessage(m dto.Message) (*response.NewMessageRespo
 
 func (h *MessageHandler) GetMessages(c *fiber.Ctx) error {
 	log.Printf("GetMessages")
-	id := c.Locals("id").(float64)
+	id := c.Locals("id").(uint)
 
 	partnerID, err := strconv.ParseUint(c.Query("partner_id"), 10, 32)
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid partner_id"})
 	}
 
-	messages, err := h.messageService.GetMessagesBySenderAndReceiver(uint(id), uint(partnerID))
+	messages, err := h.messageService.GetMessagesBySenderAndReceiver(id, uint(partnerID))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error al obtener mensajes"})
 	}

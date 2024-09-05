@@ -2,9 +2,7 @@ package socket
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
-	"strconv"
 	"test-go/internal/dto"
 	"test-go/internal/handlers"
 	"time"
@@ -33,18 +31,7 @@ func NewSocketHandler(messageHandler *handlers.MessageHandler, userHandler *hand
 
 func (h *SocketHandler) HandleSocket() fiber.Handler {
 	return websocket.New(func(c *websocket.Conn) {
-		log.Printf("New WebSocket connection\n")
-		log.Printf("Locals: %v\n", c.Locals("id"))
-		userId := c.Locals("id").(string)
-		// Convert the userId to uint
-		id, err := strconv.Atoi(userId)
-		if err != nil {
-			log.Println("Error converting userId to int:", err)
-			return
-		}
-		userIdInt := uint(id)
-
-		fmt.Printf("User %d connected\n", userIdInt)
+		userId := c.Locals("id").(uint)
 
 		h.clients.Store(userId, c)
 
@@ -64,11 +51,11 @@ func (h *SocketHandler) HandleSocket() fiber.Handler {
 
 			switch msg.Type {
 			case "message":
-				h.handleNewMessage(userIdInt, &msg)
+				h.handleNewMessage(userId, &msg)
 			case "status_update":
-				h.handleStatusUpdate(userIdInt, &msg)
+				h.handleStatusUpdate(userId, &msg)
 			case "read_receipt":
-				h.handleReadReceipt(userIdInt, &msg)
+				h.handleReadReceipt(userId, &msg)
 			default:
 				log.Println("Unknown message type:", msg.Type)
 			}
@@ -98,7 +85,7 @@ func (h *SocketHandler) handleNewMessage(senderID uint, msg *dto.WSMessage) {
 		AESKeySender:      msg.AESKeySender,
 		AESKeyReceiver:    msg.AESKeyReceiver,
 		Type:              msg.Type,
-		State:             "sent",
+		State:             msg.State,
 		ExpiresAt:         t,
 		NumberAttachments: uint(len(fileUploads)),
 	})
@@ -124,7 +111,7 @@ func (h *SocketHandler) handleNewMessage(senderID uint, msg *dto.WSMessage) {
 		}
 	}
 
-	if conn, ok := h.clients.Load(strconv.Itoa(int(msg.ReceiverID))); ok {
+	if conn, ok := h.clients.Load(msg.ReceiverID); ok {
 		wsConn := conn.(*websocket.Conn)
 		err := wsConn.WriteJSON(dto.WSMessage{
 			Type:            "new_message",
@@ -134,7 +121,7 @@ func (h *SocketHandler) handleNewMessage(senderID uint, msg *dto.WSMessage) {
 			AESKeySender:    msg.AESKeySender,
 			AESKeyReceiver:  msg.AESKeyReceiver,
 			MessageID:       newMessage.ID,
-			State:           "sent",
+			State:           msg.State,
 			FileAttachments: msg.FileAttachments,
 		})
 
@@ -146,7 +133,7 @@ func (h *SocketHandler) handleNewMessage(senderID uint, msg *dto.WSMessage) {
 		}
 	}
 
-	if conn, ok := h.clients.Load(strconv.Itoa(int(senderID))); ok {
+	if conn, ok := h.clients.Load(senderID); ok {
 		wsConn := conn.(*websocket.Conn)
 		if err := wsConn.WriteJSON(dto.WSMessage{
 			Type:            "message_sent",
@@ -165,6 +152,7 @@ func (h *SocketHandler) handleNewMessage(senderID uint, msg *dto.WSMessage) {
 }
 
 func (h *SocketHandler) handleStatusUpdate(userID uint, msg *dto.WSMessage) {
+	log.Println("Handling status update")
 	log.Printf("Message state: %v\n", msg.State)
 	log.Printf("Message id: %v\n", msg.MessageID)
 	err := h.messageHandler.UpdateMessageState(userID, msg.MessageID, msg.State)
@@ -172,8 +160,10 @@ func (h *SocketHandler) handleStatusUpdate(userID uint, msg *dto.WSMessage) {
 		log.Println("Error updating message state:", err)
 		return
 	}
+	log.Printf("Receiver ID: %v %T\n", msg.ReceiverID, msg.ReceiverID)
 
-	if conn, ok := h.clients.Load(strconv.Itoa(int(msg.ReceiverID))); ok {
+	if conn, ok := h.clients.Load(msg.ReceiverID); ok {
+		log.Println("Sending status update to receiver")
 		wsConn := conn.(*websocket.Conn)
 		if err := wsConn.WriteJSON(dto.WSMessage{
 			Type:       "status_update",
@@ -188,13 +178,17 @@ func (h *SocketHandler) handleStatusUpdate(userID uint, msg *dto.WSMessage) {
 }
 
 func (h *SocketHandler) handleReadReceipt(userID uint, msg *dto.WSMessage) {
+	log.Println("Handling read receipt")
+	log.Printf("Message state: %v\n", msg.State)
+	log.Printf("Message id: %v\n", msg.MessageID)
 	err := h.messageHandler.UpdateMessageState(userID, msg.MessageID, msg.State)
 	if err != nil {
 		log.Println("Error updating message state:", err)
 		return
 	}
 
-	if conn, ok := h.clients.Load(strconv.Itoa(int(msg.ReceiverID))); ok {
+	if conn, ok := h.clients.Load(msg.ReceiverID); ok {
+		log.Println("Sending status update to receiver")
 		wsConn := conn.(*websocket.Conn)
 		if err := wsConn.WriteJSON(dto.WSMessage{
 			Type:       "status_update",

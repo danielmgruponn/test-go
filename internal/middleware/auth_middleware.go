@@ -11,7 +11,7 @@ import (
 
 func AuthMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-
+		log.Println("AuthMiddleware")
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
 			return c.Status(401).JSON(fiber.Map{"error": "Missing auth token"})
@@ -26,10 +26,19 @@ func AuthMiddleware() fiber.Handler {
 			return c.Status(401).JSON(fiber.Map{"error": "Invalid auth token"})
 		}
 
-		claims := token.Claims.(jwt.MapClaims)
-		log.Printf("Claims User: %v\n", claims)
-		c.Locals("nickname", claims["nickname"])
-		c.Locals("id", claims["id"])
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			return c.Status(401).JSON(fiber.Map{"error": "Invalid token claims"})
+		}
+
+		if nickname, ok := claims["nickname"].(string); ok {
+			log.Printf("Nickname: %s\n", nickname)
+			c.Locals("nickname", nickname)
+		}
+		if id, ok := claims["id"].(float64); ok {
+			log.Printf("ID: %.0f\n", id)
+			c.Locals("id", uint(id))
+		}
 
 		return c.Next()
 	}
