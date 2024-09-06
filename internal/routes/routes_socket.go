@@ -9,7 +9,7 @@ import (
 	"github.com/gofiber/websocket/v2"
 )
 
-func SetupSocketRoutes(app *fiber.App, socketHandler *socket.SocketHandler, webRTCController *handlers.WebRTCHandler) {
+func SetupSocketRoutes(app *fiber.App, socketHandler *socket.SocketHandler, webRTCController *handlers.WebRTCHandler, groupWebRTCHandler *handlers.GroupCallHandler) {
 	app.Use("/ws", func(c *fiber.Ctx) error {
 		if websocket.IsWebSocketUpgrade(c) {
 			c.Locals("allowed", true)
@@ -21,4 +21,6 @@ func SetupSocketRoutes(app *fiber.App, socketHandler *socket.SocketHandler, webR
 	app.Get("/ws", middleware.WebSocketAuthMiddleware(), socketHandler.HandleSocket())
 
 	app.Get("/ws/webrtc", middleware.WebSocketAuthMiddleware(), webRTCController.HandlerWebRTC)
+
+	app.Get("/ws/group-call/:roomId", middleware.WebSocketAuthMiddleware(), groupWebRTCHandler.HandlerGroupCall)
 }

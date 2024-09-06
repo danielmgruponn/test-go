@@ -25,7 +25,13 @@ func WebSocketAuthMiddleware() fiber.Handler {
 			})
 			if err != nil || !token.Valid {
 				c.Locals("allowed", false)
-				return c.Next()
+				return websocket.New(func(ws *websocket.Conn) {
+					ws.WriteJSON(map[string]interface{}{
+							"type": "error",
+							"code": 404,
+						})
+					ws.Close()
+				})(c)
 			}
 			claims, ok := token.Claims.(jwt.MapClaims)
 			if !ok || !token.Valid {

@@ -11,14 +11,12 @@ import (
 
 type WebRTCHandler struct {
 	client map[string]*websocket.Conn
-	// peerConnection map[string]*webrtc.PeerConnection
 	mu sync.Mutex
 }
 
 func NewWebRTCHandler() *WebRTCHandler {
 	return &WebRTCHandler{
 		client: make(map[string]*websocket.Conn),
-		// peerConnection: make(map[string]*webrtc.PeerConnection),
 	}
 }
 
