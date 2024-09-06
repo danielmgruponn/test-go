@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"encoding/json"
 	"log"
 	"strconv"
 	"sync"
+	"test-go/internal/dto"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
@@ -22,83 +22,45 @@ func NewWebRTCHandler() *WebRTCHandler {
 
 func (h *WebRTCHandler) HandlerWebRTC() fiber.Handler {
 	return websocket.New(func(ws *websocket.Conn) {
-		userId := ws.Locals("id").(string)
+		userId := ws.Locals("id").(uint)
 
-		id, err := strconv.Atoi(userId)
-		if err != nil {
-			log.Println("Error converting userId to int:", err)
-			return
-		}
-		userIdInt := uint(id)
-		h.clients.Store(userIdInt, ws)
+		log.Printf("User %d connected to WebRTC\n", userId)
+		h.clients.Store(userId, ws)
 
 		defer func() {
-			log.Printf("User %s disconnected from WebRTC\n", userId)
+			log.Printf("User %d disconnected from WebRTC\n", userId)
 			h.clients.Delete(userId)
 			ws.Close()
 		}()
 
 		for {
-			_, msg, err := ws.ReadMessage()
+			var msg dto.WSRTCMessage
+			err := ws.ReadJSON(&msg)
 			if err != nil {
-				log.Printf("read error: %v\n", err)
+				log.Printf("Read error: %v\n", err)
 				break
 			}
-			var message map[string]interface{}
-			if err := json.Unmarshal(msg, &message); err != nil {
-				log.Printf("JSON Unmarshal error: %v\n", err)
-				continue
-			}
-			h.handleSignal(userId, message)
+			log.Printf("Received message Type: %s To: %s\n", msg.Type, msg.To)
+			h.handleSignal(userId, &msg)
 		}
 	})
 }
 
-func (h *WebRTCHandler) handleSignal(userId string, message map[string]interface{}) {
-	messageType, ok := message["type"].(string)
-	if !ok {
-		log.Println("Invalid message type")
-		return
-	}
-
-	to, ok := message["to"].(string)
-	if !ok {
-		log.Println("Invalid 'to' field")
-		return
-	}
-
-	toUint, err := strconv.Atoi(to)
+func (h *WebRTCHandler) handleSignal(userId uint, message *dto.WSRTCMessage) {
+	id, err := strconv.ParseUint(message.To, 10, 32)
 	if err != nil {
-		log.Println("Error converting to uint:", err)
+		log.Println("Error:", err)
 		return
 	}
-	toUintInt := uint(toUint)
-	targetConn, ok := h.clients.Load(toUintInt)
-	if !ok {
-		log.Printf("Target client %s not found\n", to)
-		return
-	}
-
-	ws, ok := targetConn.(*websocket.Conn)
-	if !ok {
-		log.Printf("Invalid connection type for client %s\n", to)
-		return
-	}
-
-	signalData, err := json.Marshal(message["signal"])
-	if err != nil {
-		log.Println("Error marshalling signal data: ", err)
-		return
-	}
-
-	response := map[string]interface{}{
-		"type":   messageType,
-		"from":   userId,
-		"signal": string(signalData),
-	}
-
-	err = ws.WriteJSON(response)
-	if err != nil {
-		log.Printf("Error sending %s message to target: %v\n", messageType, err)
+	if conn, ok := h.clients.Load(uint(id)); ok {
+		log.Printf("Sending message to %s\n", message.To)
+		wsConn := conn.(*websocket.Conn)
+		var response dto.WSRTCMessageResponse
+		response.Type = message.Type
+		response.From = strconv.Itoa(int(userId))
+		response.Signal = message.Signal
+		if err := wsConn.WriteJSON(response); err != nil {
+			log.Println("Error sending message:", err)
+		}
 	}
 }

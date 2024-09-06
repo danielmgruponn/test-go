@@ -44,6 +44,7 @@ func (h *SocketHandler) HandleSocket() fiber.Handler {
 			var msg dto.WSMessage
 			err := c.ReadJSON(&msg)
 			if err != nil {
+				log.Printf("Read error: %v\n", err)
 				break
 			}
 

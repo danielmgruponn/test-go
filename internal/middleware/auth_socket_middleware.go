@@ -42,6 +42,7 @@ func WebSocketAuthMiddleware() fiber.Handler {
 			c.Locals("allowed", true)
 
 			if id, ok := claims["id"].(float64); ok {
+				log.Printf("ID: %d\n", uint(id))
 				c.Locals("id", uint(id))
 			}
 
