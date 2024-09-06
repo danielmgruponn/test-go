@@ -48,6 +48,7 @@ func WebSocketAuthMiddleware() fiber.Handler {
 				log.Println("Missing token")
 			}
 
+			log.Printf("Token: %s\n", tokenString)
 			claims, err := validateToken(tokenString)
 			if err != nil {
 				log.Printf("Token validation failed: %v", err)

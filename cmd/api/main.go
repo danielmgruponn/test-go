@@ -40,11 +40,12 @@ func main() {
 
 	socketHandler := socket.NewSocketHandler(mnsHandler, userHandler, fileHandler)
 	webRTC := handlers.NewWebRTCHandler()
+	groupWebRTC := handlers.NewGroupCallHandler()
 
 	// Crear la aplicación Fiber
 	app := fiber.New()
 
-	routes.SetupSocketRoutes(app, socketHandler, webRTC)
+	routes.SetupSocketRoutes(app, socketHandler, webRTC, groupWebRTC)
 	routes.SetupRoutes(app, userHandler, mnsHandler, fileHandler)
 
 	// Iniciar el servidor
