@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -10,46 +11,57 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+const JWTSecretKeyEnv = "JWT_SECRET_KEY"
+
+type CustomClaims struct {
+	ID       uint   `json:"id"`
+	Nickname string `json:"nickname"`
+	jwt.RegisteredClaims
+}
+
+func validateToken(tokenString string) (*CustomClaims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(os.Getenv(JWTSecretKeyEnv)), nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse token: %w", err)
+	}
+
+	claims, ok := token.Claims.(*CustomClaims)
+	if !ok || !token.Valid {
+		return nil, errors.New("invalid token claims")
+	}
+
+	return claims, nil
+}
+
 func WebSocketAuthMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		log.Println("WebSocketAuthMiddleware")
 		if websocket.IsWebSocketUpgrade(c) {
 			tokenString := c.Query("token")
 
 			if tokenString == "" {
-				c.Locals("allowed", false)
-				return c.Next()
+				log.Println("Missing token")
 			}
 
-			token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-					return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-				}
-				return []byte(os.Getenv("JWT_SECRET_KEY")), nil
-			})
-
-			if err != nil || !token.Valid {
+			claims, err := validateToken(tokenString)
+			if err != nil {
+				log.Printf("Token validation failed: %v", err)
 				c.Locals("allowed", false)
-				return c.Next()
-			}
-
-			claims, ok := token.Claims.(jwt.MapClaims)
-			if !ok {
-				c.Locals("allowed", false)
-				return c.Next()
+				return websocket.New(func(c *websocket.Conn) {
+					c.Close()
+				})(c)
 			}
 
 			c.Locals("allowed", true)
+			c.Locals("id", claims.ID)
+			c.Locals("nickname", claims.Nickname)
 
-			if id, ok := claims["id"].(float64); ok {
-				log.Printf("ID: %d\n", uint(id))
-				c.Locals("id", uint(id))
-			}
-
-			if nickname, ok := claims["nickname"].(string); ok {
-				log.Printf("Nickname: %s\n", nickname)
-				c.Locals("nickname", nickname)
-			}
+			log.Printf("Authenticated user: ID=%d, Nickname=%s", claims.ID, claims.Nickname)
 
 			return c.Next()
 		}
