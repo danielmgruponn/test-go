@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"test-go/internal/core/ports"
 	"test-go/internal/dto"
 	"test-go/internal/mappers"
@@ -22,13 +23,13 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Datos inválidos"})
 	}
 
-	id, err := h.userService.Register(user)
+	created, err := h.userService.Register(user)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error al registrar usuario"})
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"id": id})
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"created": created})
 }
 
 func (h *UserHandler) Login(c *fiber.Ctx) error {
@@ -57,6 +58,26 @@ func (h *UserHandler) GetUserById(c *fiber.Ctx) error {
 	}
 
 	u := mappers.MapUserDTOToSafeDTO(&user)
+
+	return c.Status(fiber.StatusOK).JSON(u)
+}
+
+func (h *UserHandler) GetUserByNickname(c *fiber.Ctx) error {
+	nickname := c.Query("nickname")
+	log.Printf("Nickname: %v %T", nickname, nickname)
+
+	if nickname == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Nickname inválido"})
+	}
+
+	user, err := h.userService.GetUserByNickname(nickname)
+	if err != nil {
+		log.Printf("Error getting the user info by nickname: %v", err)
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Usuario no encontrado"})
+	}
+
+	u := mappers.MapUserDTOToSafeDTO(&user)
+	log.Printf("User: %v", u)
 
 	return c.Status(fiber.StatusOK).JSON(u)
 }

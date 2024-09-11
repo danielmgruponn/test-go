@@ -5,7 +5,7 @@ import (
 )
 
 type User struct {
-	ID         uint `gorm:"primaryKey"`
+	ID         string `gorm:"primary_key"`
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 	Nickname   string
@@ -13,6 +13,6 @@ type User struct {
 	PublicKey  string
 }
 
-func (User) TableUser() string {
-	return "users" // Nombre de la tabla en la base de datos
+func (User) TableUsers() string {
+	return "users"
 }

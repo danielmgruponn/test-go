@@ -26,6 +26,7 @@ func SetupRoutes(app *fiber.App, userController *handlers.UserHandler, mnsContro
 
 	// Ejemplo de ruta protegida
 	api.Get("/users/:id", userController.GetUserById)
+	api.Get("/users", userController.GetUserByNickname)
 
 	api.Get("/messages", mnsController.GetMessages)
 

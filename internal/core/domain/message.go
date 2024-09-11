@@ -1,11 +1,13 @@
 package domain
 
-import "time"
+import (
+	"time"
+)
 
 type Message struct {
-	ID                uint `gorm:"primary_key"`
-	SenderID          uint `gorm:"index"`
-	ReceiverID        uint `gorm:"index"`
+	ID                string `gorm:"primary_key"`
+	SenderID          string `gorm:"index"`
+	ReceiverID        string `gorm:"index"`
 	Body              string
 	State             string
 	AESKeySender      string
@@ -18,5 +20,5 @@ type Message struct {
 }
 
 func (Message) TableMessages() string {
-	return "messages" // Nombre de la tabla en la base de datos
+	return "messages"
 }

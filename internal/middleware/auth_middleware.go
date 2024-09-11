@@ -35,9 +35,9 @@ func AuthMiddleware() fiber.Handler {
 			log.Printf("Nickname: %s\n", nickname)
 			c.Locals("nickname", nickname)
 		}
-		if id, ok := claims["id"].(float64); ok {
-			log.Printf("ID: %.0f\n", id)
-			c.Locals("id", uint(id))
+		if id, ok := claims["id"].(string); ok {
+			log.Printf("ID: %s\n", id)
+			c.Locals("id", id)
 		}
 
 		return c.Next()

@@ -4,7 +4,7 @@ import (
 	"test-go/internal/core/domain"
 	"test-go/internal/core/ports"
 	"test-go/internal/dto"
-	"test-go/internal/response"
+	"test-go/internal/mappers"
 )
 
 type messageService struct {
@@ -15,33 +15,18 @@ func NewMessageService(messageRepo ports.MessageRepository) ports.MessageService
 	return &messageService{messageRepo: messageRepo}
 }
 
-func (s *messageService) SaveMessage(message dto.Message) (*response.NewMessageResponse, error) {
-	messageNew := &domain.Message{
-		SenderID:          message.SenderID,
-		ReceiverID:        message.ReceiverID,
-		Body:              message.Body,
-		State:             message.State,
-		AESKeySender:      message.AESKeySender,
-		AESKeyReceiver:    message.AESKeyReceiver,
-		ExpiredAt:         message.ExpiresAt,
-		NumberAttachments: message.NumberAttachments,
-	}
+func (s *messageService) SaveMessage(message dto.Message) error {
+	messageNew := mappers.MapMessageDTOToDomain(message)
 
-	newMns, err := s.messageRepo.CreateMessage(messageNew)
-	if err != nil {
-		return nil, err
-	}
-
-	return &response.NewMessageResponse{
-		ID: newMns.ID,
-	}, nil
+	err := s.messageRepo.CreateMessage(messageNew)
+	return err
 }
 
-func (s *messageService) GetMyMessages(id uint) ([]domain.Message, error) {
+func (s *messageService) GetMyMessages(id string) ([]domain.Message, error) {
 	return s.messageRepo.FindByUserId(id)
 }
 
-func (s *messageService) UpdateStateMessage(messageId uint, state string) error {
+func (s *messageService) UpdateStateMessage(messageId string, state string) error {
 
 	_, err := s.messageRepo.UpdateStateByMnsId(messageId, state)
 	if err != nil {
@@ -51,6 +36,6 @@ func (s *messageService) UpdateStateMessage(messageId uint, state string) error 
 	return nil
 }
 
-func (s *messageService) GetMessagesBySenderAndReceiver(senderID, receiverID uint) ([]domain.Message, error) {
+func (s *messageService) GetMessagesBySenderAndReceiver(senderID, receiverID string) ([]domain.Message, error) {
 	return s.messageRepo.FindBySenderAndReceiverId(senderID, receiverID)
 }

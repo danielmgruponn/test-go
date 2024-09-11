@@ -7,7 +7,6 @@ import (
 	"test-go/internal/core/ports"
 	"test-go/internal/dto"
 	"test-go/internal/mappers"
-	"test-go/internal/response"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -21,12 +20,10 @@ func NewMessageHandler(messageService ports.MessageService, userService ports.Us
 	return &MessageHandler{messageService: messageService, userService: userService}
 }
 
-func (h *MessageHandler) CreateMessage(m dto.Message) (*response.NewMessageResponse, error) {
+func (h *MessageHandler) CreateMessage(m dto.Message) error {
 
-	mns, err := h.messageService.SaveMessage(m)
-	if err != nil {
-		return nil, err
-	}
+	err := h.messageService.SaveMessage(m)
+	return err
 
 	// fcm, err := services.NewFCMClient()
 	// if err != nil {
@@ -42,20 +39,14 @@ func (h *MessageHandler) CreateMessage(m dto.Message) (*response.NewMessageRespo
 	// if err != nil {
 	// 	return nil, err
 	// }
-
-	return mns, nil
 }
 
 func (h *MessageHandler) GetMessages(c *fiber.Ctx) error {
 	log.Printf("GetMessages")
-	id := c.Locals("id").(uint)
+	id := c.Locals("id").(string)
 
-	partnerID, err := strconv.ParseUint(c.Query("partner_id"), 10, 32)
-	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid partner_id"})
-	}
-
-	messages, err := h.messageService.GetMessagesBySenderAndReceiver(id, uint(partnerID))
+	partnerID := c.Query("partner_id")
+	messages, err := h.messageService.GetMessagesBySenderAndReceiver(id, partnerID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error al obtener mensajes"})
 	}
@@ -95,6 +86,6 @@ func structToStringMap(inter interface{}) (map[string]string, error) {
 	return strMap, nil
 }
 
-func (h *MessageHandler) UpdateMessageState(userId, messageId uint, messageState string) error {
+func (h *MessageHandler) UpdateMessageState(userId string, messageId string, messageState string) error {
 	return h.messageService.UpdateStateMessage(messageId, messageState)
 }

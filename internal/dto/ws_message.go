@@ -1,18 +1,55 @@
 package dto
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
+
+type WSMessageType string
+
+const (
+	WSMessageTypeError        WSMessageType = "error"
+	WSMessageTypeNewMessage   WSMessageType = "new_message"
+	WSMessageTypeMessageSent  WSMessageType = "message_sent"
+	WSMessageTypeStatusUpdate WSMessageType = "status_update"
+	WSMessageTypeReadReceipt  WSMessageType = "read_receipt"
+	WSMessageTypeMessage      WSMessageType = "message"
+)
+
+type WSError struct {
+	Status  string `json:"status"`
+	Message string `json:"message"`
+}
 
 type WSMessage struct {
-	Type            string `json:"type"`
-	SenderID        uint   `json:"senderId"`
-	ReceiverID      uint   `json:"receiverId"`
+	Type  WSMessageType `json:"type"`
+	Data  interface{}   `json:"data"`
+	Error *WSError      `json:"error,omitempty"`
+}
+
+type MessageData struct {
+	SenderID        string `json:"senderId"`
+	ReceiverID      string `json:"receiverId"`
 	Body            string `json:"body"`
-	AESKeySender    string `json:"aesKeySender,omitempty"`
-	AESKeyReceiver  string `json:"aesKeyReceiver,omitempty"`
-	MessageID       uint   `json:"messageId,omitempty"`
-	State           string `json:"state,omitempty"`
-	ExpiredAt       string `json:"expiredAt,omitempty"`
-	FileAttachments string `json:"fileAttachments,omitempty"`
+	AESKeySender    string `json:"aesKeySender"`
+	AESKeyReceiver  string `json:"aesKeyReceiver"`
+	MessageID       string `json:"messageId"`
+	State           string `json:"state"`
+	FileAttachments string `json:"fileAttachments"`
+	ExpiredAt       string `json:"expiredAt"`
+}
+
+type StatusUpdateData struct {
+	SenderID   string `json:"senderId"`
+	ReceiverID string `json:"receiverId"`
+	MessageID  string `json:"messageId"`
+	State      string `json:"state"`
+}
+
+type ReadReceiptData struct {
+	SenderID   string `json:"senderId"`
+	ReceiverID string `json:"receiverId"`
+	MessageID  string `json:"messageId"`
+	State      string `json:"state"`
 }
 
 type WSRTCMessage struct {

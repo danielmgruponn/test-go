@@ -23,6 +23,7 @@ func MapMessageDomainToDTO(message domain.Message) *dto.MessageDTO {
 
 func MapMessageDTOToDomain(message dto.Message) *domain.Message {
 	return &domain.Message{
+		ID:             message.MessageID,
 		SenderID:       message.SenderID,
 		ReceiverID:     message.ReceiverID,
 		Body:           message.Body,

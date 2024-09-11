@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"log"
-	"strconv"
 	"sync"
 	"test-go/internal/dto"
 
@@ -22,13 +21,20 @@ func NewWebRTCHandler() *WebRTCHandler {
 
 func (h *WebRTCHandler) HandlerWebRTC() fiber.Handler {
 	return websocket.New(func(ws *websocket.Conn) {
-		userId := ws.Locals("id").(uint)
+		allowed := ws.Locals("allowed").(bool)
+		if !allowed {
+			log.Printf("Not allowed\n")
+			ws.Close()
+			return
+		}
 
-		log.Printf("User %d connected to WebRTC\n", userId)
+		userId := ws.Locals("id").(string)
+
+		log.Printf("User %v %T connected to WebRTC\n", userId, userId)
 		h.clients.Store(userId, ws)
 
 		defer func() {
-			log.Printf("User %d disconnected from WebRTC\n", userId)
+			log.Printf("User %v disconnected from WebRTC\n", userId)
 			h.clients.Delete(userId)
 			ws.Close()
 		}()
@@ -40,24 +46,20 @@ func (h *WebRTCHandler) HandlerWebRTC() fiber.Handler {
 				log.Printf("Read error: %v\n", err)
 				break
 			}
-			log.Printf("Received message Type: %s To: %s\n", msg.Type, msg.To)
+			log.Printf("Received message: %s %T\n", msg, msg)
 			h.handleSignal(userId, &msg)
 		}
 	})
 }
 
-func (h *WebRTCHandler) handleSignal(userId uint, message *dto.WSRTCMessage) {
-	id, err := strconv.ParseUint(message.To, 10, 32)
-	if err != nil {
-		log.Println("Error:", err)
-		return
-	}
-	if conn, ok := h.clients.Load(uint(id)); ok {
+func (h *WebRTCHandler) handleSignal(userId string, message *dto.WSRTCMessage) {
+	log.Printf("Handling signal from %s to %s\n", userId, message.To)
+	if conn, ok := h.clients.Load(message.To); ok {
 		log.Printf("Sending message to %s\n", message.To)
 		wsConn := conn.(*websocket.Conn)
 		var response dto.WSRTCMessageResponse
 		response.Type = message.Type
-		response.From = strconv.Itoa(int(userId))
+		response.From = userId
 		response.Signal = message.Signal
 		if err := wsConn.WriteJSON(response); err != nil {
 			log.Println("Error sending message:", err)

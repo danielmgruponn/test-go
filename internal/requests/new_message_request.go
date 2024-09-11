@@ -2,8 +2,8 @@ package requests
 
 type BodyMessageRequest struct {
 	Event           string `json:"event"`
-	SenderID        uint   `json:"sender_id"`
-	ReceiverID      uint   `json:"receiver_id"`
+	SenderID        string `json:"sender_id"`
+	ReceiverID      string `json:"receiver_id"`
 	Body            string `json:"body"`
 	AESKeySender    string `json:"aes_key_sender,omitempty"`
 	AESKeyReceiver  string `json:"aes_key_receiver,omitempty"`

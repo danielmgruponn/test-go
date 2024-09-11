@@ -15,8 +15,9 @@ func NewUserService(userRepo ports.UserRepository) ports.UserService {
 	return &userService{userRepo: userRepo}
 }
 
-func (s *userService) Register(user *dto.RegisterRequest) (uint, error) {
+func (s *userService) Register(user *dto.RegisterRequest) (bool, error) {
 	userDomain := &domain.User{
+		ID:         user.ID,
 		Nickname:   user.Nickname,
 		PublicKey:  user.PublicKey,
 		PrivateKey: user.PrivateKey,
@@ -24,10 +25,10 @@ func (s *userService) Register(user *dto.RegisterRequest) (uint, error) {
 
 	error := s.userRepo.Create(userDomain)
 	if error != nil {
-		return 0, error
+		return false, error
 	}
 
-	return userDomain.ID, nil
+	return true, nil
 }
 
 func (s *userService) Login(nickname string) (dto.LoginResponse, error) {

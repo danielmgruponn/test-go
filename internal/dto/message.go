@@ -1,24 +1,25 @@
 package dto
 
-import "time"
+import (
+	"time"
+)
 
 type Message struct {
-	Event             string    `json:"event"`
-	SenderID          uint      `json:"senderId"`
-	ReceiverID        uint      `json:"receiverId"`
+	MessageID         string    `json:"messageId"`
+	SenderID          string    `json:"senderId"`
+	ReceiverID        string    `json:"receiverId"`
 	Body              string    `json:"body"`
 	AESKeySender      string    `json:"aesKeySender,omitempty"`
 	AESKeyReceiver    string    `json:"aesKeyReceiver,omitempty"`
-	Type              string    `json:"type"`
 	State             string    `json:"state,omitempty"`
 	ExpiresAt         time.Time `json:"expiresAt,omitempty"`
 	NumberAttachments uint      `json:"numberAttachments,omitempty"`
 }
 
 type MessageDTO struct {
-	ID                uint             `json:"id"`
-	SenderID          uint             `json:"senderId"`
-	ReceiverID        uint             `json:"receiverId"`
+	ID                string           `json:"id"`
+	SenderID          string           `json:"senderId"`
+	ReceiverID        string           `json:"receiverId"`
 	Body              string           `json:"body"`
 	State             string           `json:"state"`
 	AESKeySender      string           `json:"aesKeySender,omitempty"`

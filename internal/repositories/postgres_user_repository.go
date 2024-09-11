@@ -22,7 +22,7 @@ func (r *postgresUserRepository) Create(user *domain.User) error {
 
 func (r *postgresUserRepository) FindByNickname(username string) (*dto.UserDTO, error) {
 	var user domain.User
-	err := r.db.Table(user.TableUser()).Where("nickname = ?", username).First(&user).Error
+	err := r.db.Table(user.TableUsers()).Where("nickname = ?", username).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (r *postgresUserRepository) FindByNickname(username string) (*dto.UserDTO, 
 
 func (r *postgresUserRepository) FindById(id string) (*dto.UserDTO, error) {
 	var user domain.User
-	err := r.db.Table(user.TableUser()).Where("id = ?", id).First(&user).Error
+	err := r.db.Table(user.TableUsers()).Where("id = ?", id).First(&user).Error
 	if err != nil {
 		return nil, err
 	}

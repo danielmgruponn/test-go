@@ -14,7 +14,7 @@ import (
 const JWTSecretKeyEnv = "JWT_SECRET_KEY"
 
 type CustomClaims struct {
-	ID       uint   `json:"id"`
+	ID       string `json:"id"`
 	Nickname string `json:"nickname"`
 	jwt.RegisteredClaims
 }
@@ -44,6 +44,7 @@ func WebSocketAuthMiddleware() fiber.Handler {
 		if websocket.IsWebSocketUpgrade(c) {
 			tokenString := c.Query("token")
 
+			log.Printf("Token: %s\n", tokenString)
 			if tokenString == "" {
 				log.Println("Missing token")
 			}
@@ -58,11 +59,13 @@ func WebSocketAuthMiddleware() fiber.Handler {
 				})(c)
 			}
 
+			log.Printf("Claims: %v\n", claims)
+
 			c.Locals("allowed", true)
 			c.Locals("id", claims.ID)
 			c.Locals("nickname", claims.Nickname)
 
-			log.Printf("Authenticated user: ID=%d, Nickname=%s", claims.ID, claims.Nickname)
+			log.Printf("Authenticated user: ID=%s, Nickname=%s", claims.ID, claims.Nickname)
 
 			return c.Next()
 		}
