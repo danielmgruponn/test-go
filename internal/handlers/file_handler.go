@@ -34,12 +34,8 @@ func (f *FileHandler) UploadFiles(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(updloadFiles)
 }
 
-func (f *FileHandler) SaveFile(file dto.FileAttachment) (*dto.NewFileAttachment, error) {
-	newFile, err := f.fileService.SaveFile(&file)
-	if err != nil {
-		return nil, err
-	}
-
-	return &newFile, nil
+func (f *FileHandler) SaveFile(file dto.FileAttachment) error {
+	err := f.fileService.SaveFile(&file)
+	return err
 
 }

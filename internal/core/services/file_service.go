@@ -34,6 +34,7 @@ func (f *FileService) UploadFiles(files []*multipart.FileHeader) ([]dto.FileUplo
 		}
 
 		filename := fmt.Sprintf("%d_%s", time.Now().UnixNano(), file.Filename)
+		log.Printf("Uploading file %s", filename)
 
 		fileContent, err := file.Open()
 
@@ -79,8 +80,9 @@ func (f *FileService) UploadFiles(files []*multipart.FileHeader) ([]dto.FileUplo
 	return fileAttachments, nil
 }
 
-func (f *FileService) SaveFile(file *dto.FileAttachment) (dto.NewFileAttachment, error) {
+func (f *FileService) SaveFile(file *dto.FileAttachment) error {
 	fileAttachment := domain.FileAttachment{
+		ID:        file.ID,
 		MessageID: file.MessageID,
 		FileName:  file.FileName,
 		FileType:  file.FileType,
@@ -88,10 +90,5 @@ func (f *FileService) SaveFile(file *dto.FileAttachment) (dto.NewFileAttachment,
 		FileURL:   file.FileURL,
 	}
 	err := f.fileRepo.Create(&fileAttachment)
-	if err != nil {
-		return dto.NewFileAttachment{}, err
-	}
-	return dto.NewFileAttachment{
-		ID: fileAttachment.ID,
-	}, nil
+	return err
 }

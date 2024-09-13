@@ -7,5 +7,5 @@ import (
 
 type FileService interface {
 	UploadFiles(files []*multipart.FileHeader) ([]dto.FileUpload, error)
-	SaveFile(file *dto.FileAttachment) (dto.NewFileAttachment, error)
+	SaveFile(file *dto.FileAttachment) error
 }

@@ -12,6 +12,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
+	"github.com/google/uuid"
 )
 
 type SocketHandler struct {
@@ -180,7 +181,7 @@ func (h *SocketHandler) handleNewMessage(senderID string, msg *dto.WSMessage) {
 		return
 	}
 
-	log.Printf("File attachments: %v\n", fileUploads)
+	log.Printf("FileUploads: %v\n", fileUploads)
 
 	err = h.messageHandler.CreateMessage(dto.Message{
 		MessageID:         data.MessageID,
@@ -200,7 +201,9 @@ func (h *SocketHandler) handleNewMessage(senderID string, msg *dto.WSMessage) {
 	}
 
 	for _, file := range fileUploads {
+		id := uuid.New().String()
 		fileAttachment := dto.FileAttachment{
+			ID:        id,
 			MessageID: data.MessageID,
 			FileName:  file.FileName,
 			FileType:  file.FileType,
@@ -208,7 +211,7 @@ func (h *SocketHandler) handleNewMessage(senderID string, msg *dto.WSMessage) {
 			FileURL:   file.FileURL,
 		}
 
-		_, err := h.fileHandler.SaveFile(fileAttachment)
+		err := h.fileHandler.SaveFile(fileAttachment)
 		if err != nil {
 			log.Println("Error saving file:", err)
 			return
