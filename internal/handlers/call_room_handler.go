@@ -5,6 +5,7 @@ import (
 	"log"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
@@ -12,90 +13,139 @@ import (
 
 type Room struct {
 	ID      string
-	Clients map[string]*websocket.Conn
-	mu      sync.Mutex
+	Clients sync.Map
+}
+
+type Client struct {
+	Conn *websocket.Conn
+	Send chan []byte
 }
 
 type GroupCallHandler struct {
-	Rooms map[string]*Room
-	mu    sync.Mutex
+	Rooms sync.Map
 }
 
 func NewGroupCallHandler() *GroupCallHandler {
-	return &GroupCallHandler{
-		Rooms: make(map[string]*Room),
-	}
+	return &GroupCallHandler{}
 }
 
-func (h *GroupCallHandler) HandlerGroupCall(c *fiber.Ctx) error {
+func (h *GroupCallHandler) HandleGroupCall(c *fiber.Ctx) error {
 	userId := c.Locals("id").(uint)
 	roomId := c.Params("roomId")
 
-	log.Println(userId)
-	id := strconv.Itoa(int(userId))
+	id := strconv.FormatUint(uint64(userId), 10)
 
 	return websocket.New(func(ws *websocket.Conn) {
-		h.mu.Lock()
-		if h.Rooms[roomId] == nil {
-			h.Rooms[roomId] = &Room{
-				ID:      roomId,
-				Clients: make(map[string]*websocket.Conn),
-			}
+		client := &Client{
+			Conn: ws,
+			Send: make(chan []byte, 256),
 		}
-		room := h.Rooms[roomId]
-		h.mu.Unlock()
 
-		room.mu.Lock()
-		room.Clients[id] = ws
-		room.mu.Unlock()
+		room := h.getOrCreateRoom(roomId)
+		h.addClientToRoom(room, id, client)
 
-		defer func() {
-			room.mu.Lock()
-			delete(room.Clients, id)
-			room.mu.Unlock()
-			ws.Close()
-		}()
-
-		for {
-			_, msg, err := ws.ReadMessage()
-			if err != nil {
-				log.Println("Message Read Error: ", err)
-				break
-			}
-
-			var message map[string]interface{}
-			if err := json.Unmarshal(msg, &message); err != nil {
-				log.Println("Message Unmarshal Error: ", err)
-				continue
-			}
-
-			h.handleGroupSignal(roomId, id, message)
-		}
+		go h.writePump(client)
+		h.readPump(room, id, client)
 	})(c)
 }
 
-func (h *GroupCallHandler) handleGroupSignal(roomId, userId string, message map[string]interface{}) {
+func (h *GroupCallHandler) getOrCreateRoom(roomId string) *Room {
+	room, _ := h.Rooms.LoadOrStore(roomId, &Room{
+		ID: roomId,
+	})
+	return room.(*Room)
+}
+
+func (h *GroupCallHandler) addClientToRoom(room *Room, id string, client *Client) {
+	room.Clients.Store(id, client)
+}
+
+func (h *GroupCallHandler) removeClientFromRoom(room *Room, id string) {
+	if client, ok := room.Clients.LoadAndDelete(id); ok {
+		close(client.(*Client).Send)
+	}
+}
+
+func (h *GroupCallHandler) readPump(room *Room, id string, client *Client) {
+	defer func() {
+		h.removeClientFromRoom(room, id)
+		client.Conn.Close()
+	}()
+
+	client.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	client.Conn.SetPongHandler(func(string) error {
+		client.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		return nil
+	})
+
+	for {
+		_, msg, err := client.Conn.ReadMessage()
+		if err != nil {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Printf("error: %v", err)
+			}
+			break
+		}
+
+		var message map[string]interface{}
+		if err := json.Unmarshal(msg, &message); err != nil {
+			log.Println("Message Unmarshal Error: ", err)
+			continue
+		}
+
+		h.handleGroupSignal(room, id, message)
+	}
+}
+
+func (h *GroupCallHandler) writePump(client *Client) {
+	ticker := time.NewTicker(54 * time.Second)
+	defer func() {
+		ticker.Stop()
+		client.Conn.Close()
+	}()
+
+	for {
+		select {
+		case message, ok := <-client.Send:
+			client.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+			if !ok {
+				client.Conn.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
+
+			w, err := client.Conn.NextWriter(websocket.TextMessage)
+			if err != nil {
+				return
+			}
+			w.Write(message)
+
+			if err := w.Close(); err != nil {
+				return
+			}
+		case <-ticker.C:
+			client.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+			if err := client.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return
+			}
+		}
+	}
+}
+
+func (h *GroupCallHandler) handleGroupSignal(room *Room, userId string, message map[string]interface{}) {
 	messageType, ok := message["type"].(string)
 	if !ok {
 		log.Println("Message Type Invalid")
 		return
 	}
 
-	room := h.Rooms[roomId]
-	if room == nil {
-		log.Printf("Room %s not found\n", roomId)
-		return
-	}
-
-	log.Println(messageType)
 	switch messageType {
 	case "join":
-		h.bradcastToRoom(room, userId, map[string]interface{}{
+		h.broadcastToRoom(room, userId, map[string]interface{}{
 			"type":   "user-joined",
 			"userId": userId,
 		})
 	case "offer":
-		h.bradcastToRoom(room, userId, map[string]interface{}{
+		h.broadcastToRoom(room, userId, map[string]interface{}{
 			"type":  "offer",
 			"from":  userId,
 			"offer": message["offer"],
@@ -103,7 +153,7 @@ func (h *GroupCallHandler) handleGroupSignal(roomId, userId string, message map[
 	case "answer":
 		to, ok := message["to"].(string)
 		if !ok {
-			log.Println("Invalid 'to' field answer")
+			log.Println("Invalid 'to' field in answer")
 			return
 		}
 		h.sendToClient(room, to, map[string]interface{}{
@@ -112,13 +162,13 @@ func (h *GroupCallHandler) handleGroupSignal(roomId, userId string, message map[
 			"answer": message["answer"],
 		})
 	case "ice-candidate":
-		h.bradcastToRoom(room, userId, map[string]interface{}{
+		h.broadcastToRoom(room, userId, map[string]interface{}{
 			"type":      "ice-candidate",
 			"from":      userId,
 			"candidate": message["candidate"],
 		})
 	case "leave":
-		h.bradcastToRoom(room, userId, map[string]interface{}{
+		h.broadcastToRoom(room, userId, map[string]interface{}{
 			"type":   "user-left",
 			"userId": userId,
 		})
@@ -127,27 +177,41 @@ func (h *GroupCallHandler) handleGroupSignal(roomId, userId string, message map[
 	}
 }
 
-func (h *GroupCallHandler) bradcastToRoom(room *Room, senderId string, message map[string]interface{}) {
-	room.mu.Lock()
-	defer room.mu.Unlock()
+func (h *GroupCallHandler) broadcastToRoom(room *Room, senderId string, message map[string]interface{}) {
+	jsonMessage, err := json.Marshal(message)
+	if err != nil {
+		log.Printf("Error marshaling message: %v\n", err)
+		return
+	}
 
-	for clientId, conn := range room.Clients {
+	room.Clients.Range(func(key, value interface{}) bool {
+		clientId := key.(string)
+		client := value.(*Client)
 		if clientId != senderId {
-			log.Println(clientId)
-			if err := conn.WriteJSON(message); err != nil {
-				log.Printf("Error sending message to client %s: %v\n", clientId, err)
+			select {
+			case client.Send <- jsonMessage:
+			default:
+				close(client.Send)
+				room.Clients.Delete(clientId)
 			}
 		}
-	}
+		return true
+	})
 }
 
 func (h *GroupCallHandler) sendToClient(room *Room, clientId string, message map[string]interface{}) {
-	room.mu.Lock()
-	defer room.mu.Unlock()
+	jsonMessage, err := json.Marshal(message)
+	if err != nil {
+		log.Printf("Error marshaling message: %v\n", err)
+		return
+	}
 
-	if conn, ok := room.Clients[clientId]; ok {
-		if err := conn.WriteJSON(message); err != nil {
-			log.Printf("Error sending message to client %s: %v\n", clientId, err)
+	if client, ok := room.Clients.Load(clientId); ok {
+		select {
+		case client.(*Client).Send <- jsonMessage:
+		default:
+			close(client.(*Client).Send)
+			room.Clients.Delete(clientId)
 		}
 	} else {
 		log.Printf("Client %s not found in room\n", clientId)

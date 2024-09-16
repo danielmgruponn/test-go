@@ -13,5 +13,5 @@ func SetupSocketRoutes(app *fiber.App, socketHandler *socket.SocketHandler, webR
 	ws.Use(middleware.WebSocketAuthMiddleware())
 	ws.Get("/", socketHandler.HandleSocket())
 	ws.Get("/webrtc", webRTCController.HandlerWebRTC())
-	ws.Get("/group-call/:roomId", groupWebRTCHandler.HandlerGroupCall)
+	ws.Get("/group-call/:roomId", groupWebRTCHandler.HandleGroupCall)
 }
