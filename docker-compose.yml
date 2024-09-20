@@ -1,8 +1,6 @@
-version: '3.8'
-
 services:
-  server-go:
-    container_name: go
+  go-app:
+    container_name: go-app
     build:
       context: .
       dockerfile: Dockerfile
@@ -17,9 +15,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-nginx
+    volumes:
+      - .config/nginx.conf:/etc/nginx/nginx.conf
+      - certbot-etc:/etc/letsencrypt  # Volumen para los certificados SSL
+      - certbot-var:/var/www/certbot 
     ports:
       - "80:80"
       - "443:443"
     depends_on:
-      - server-go
-    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+      - go-app
+
+volumes:
+  certbot-etc:
+  certbot-var:
