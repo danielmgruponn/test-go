@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"log"
-	"strconv"
 	"sync"
 	"time"
 
@@ -30,10 +29,8 @@ func NewGroupCallHandler() *GroupCallHandler {
 }
 
 func (h *GroupCallHandler) HandleGroupCall(c *fiber.Ctx) error {
-	userId := c.Locals("id").(uint)
+	id := c.Locals("id").(string)
 	roomId := c.Params("roomId")
-
-	id := strconv.FormatUint(uint64(userId), 10)
 
 	return websocket.New(func(ws *websocket.Conn) {
 		client := &Client{
