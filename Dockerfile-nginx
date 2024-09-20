@@ -1,0 +1,19 @@
+# Usa la imagen oficial de Nginx como base
+FROM nginx:latest
+
+# Instala las dependencias necesarias
+RUN apt-get update && \
+    apt-get install -y sudo vim apt certbot
+
+# Limpia la caché de apt para reducir el tamaño de la imagen
+RUN apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copia la configuración personalizada de Nginx, si tienes una
+# COPY ./my-nginx.conf /etc/nginx/nginx.conf
+
+# Expone el puerto 80
+EXPOSE 80 443
+
+# Comando por defecto para iniciar Nginx
+CMD ["nginx", "-g", "daemon off;"]
