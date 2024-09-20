@@ -16,7 +16,7 @@ services:
       context: .
       dockerfile: Dockerfile-nginx
     volumes:
-      - .config/nginx.conf:/etc/nginx/nginx.conf
+      # - config/nginx.conf:/etc/nginx/nginx.conf
       - certbot-etc:/etc/letsencrypt  # Volumen para los certificados SSL
       - certbot-var:/var/www/certbot 
     ports:
