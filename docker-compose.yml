@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   server-go:
+    container_name: go
     build:
       context: .
       dockerfile: Dockerfile
