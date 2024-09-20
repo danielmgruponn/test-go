@@ -1,0 +1,5 @@
+test-go/.git
+test-go/.gitignore
+test-go/README.md
+Dockerfile
+.dockerignore
