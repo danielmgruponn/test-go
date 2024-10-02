@@ -1,30 +1,53 @@
 services:
+
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    restart: always
+    ports:
+      - "8000:8000"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - certs:/etc/nginx/certs:ro
+      - vhostd:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - acme:/etc/acme.sh
+    labels:
+      - com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy
+
+  letsencrypt:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    restart: always
+    environment:
+      - NGINX_PROXY_CONTAINER=nginx-proxy
+    volumes:
+      - certs:/etc/nginx/certs:rw
+      - vhostd:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - acme:/etc/acme.sh
+
   go-app:
     container_name: go-app
     build:
       context: .
       dockerfile: Dockerfile
+    restart: always
     ports:
-      - "8080:80"
+      - "8000:8000"
     volumes:
       - ./test-go:/go
     command: /bin/sh -c "cd /app && ./server"
-
-  nginx:
-    container_name: nginx
-    build:
-      context: .
-      dockerfile: Dockerfile-nginx
-    volumes:
-      # - config/nginx.conf:/etc/nginx/nginx.conf
-      - certbot-etc:/etc/letsencrypt  # Volumen para los certificados SSL
-      - certbot-var:/var/www/certbot 
-    ports:
-      - "80:80"
-      - "443:443"
+    environment:
+      - VIRTUAL_HOST=nappoleon.chat,www.nappoleon.chat
+      - LETSENCRYPT_HOST=nappoleon.chat,www.nappoleon.chat
+      - LETSENCRYPT_EMAIL=tobias.gruponn@gmail.com
     depends_on:
-      - go-app
+      - nginx-proxy
+      - letsencrypt
 
-volumes:
-  certbot-etc:
-  certbot-var:
+volumes: 
+  certs:
+  html:
+  vhostd:
+  acme:
