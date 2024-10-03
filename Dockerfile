@@ -10,4 +10,6 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o server ./cmd/api
 
 WORKDIR /app
 
+EXPOSE 8080
+
 CMD [ "/server" ]
