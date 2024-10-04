@@ -16,10 +16,7 @@ services:
       - acme:/etc/acme.sh
     labels:
       - com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy
-      # - com.github.jrcs.letsencrypt_nginx_proxy_companion.force_ssl=true # Fuerza redirección a HTTPS
-      # - com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy_ssl_port=443 # Configura el puerto SSL
     environment:
-    #   - DEFAULT_HOST=nappoleon.com
       - TRUST_DOWNSTREAM_PROXY=false
     networks:
       - web 
@@ -29,14 +26,13 @@ services:
     container_name: letsencrypt
     restart: always
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - certs:/etc/nginx/certs:rw
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - certs:/etc/nginx/certs:ro
       - vhostd:/etc/nginx/vhost.d
       - html:/usr/share/nginx/html
       - acme:/etc/acme.sh
     environment:
       - NGINX_PROXY_CONTAINER=nginx-proxy
-      # - DEFAULT_EMAIL=tobias.gruponn@gmail.com
     networks:
       - web
 
@@ -53,9 +49,9 @@ services:
     expose:
       - "8080"
     environment:
-      - VIRTUAL_HOST=nappoleon.com
-      - LETSENCRYPT_HOST=nappoleon.com
-      - LETSENCRYPT_EMAIL=tobias.gruponn@gmail.com
+      - VIRTUAL_HOST=mydomini.com
+      - LETSENCRYPT_HOST=mydominio.com
+      - LETSENCRYPT_EMAIL=test@gmail.com
     networks:
       - web
     depends_on:
