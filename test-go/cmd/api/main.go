@@ -49,11 +49,6 @@ func main() {
 	routes.SetupRoutes(app, userHandler, mnsHandler, fileHandler)
 
 	// Iniciar el servidor
-	
-	if os.Getenv("APP_ENV") == "production" {
-		log.Fatal(app.ListenTLS(":" + os.Getenv("SERVER_PORT"), ))
-    }
-
 	log.Fatal(app.Listen(":" + os.Getenv("SERVER_PORT")))
 }
 
