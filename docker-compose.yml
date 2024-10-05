@@ -9,7 +9,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/run/docker.sock:/tmp/docker.sock:ro
       - certs:/etc/nginx/certs:ro
       - vhostd:/etc/nginx/vhost.d
       - html:/usr/share/nginx/html
@@ -17,6 +17,7 @@ services:
     labels:
       - com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy
     environment:
+      - DEFAULT_HOST=mydominio.com
       - TRUST_DOWNSTREAM_PROXY=false
     networks:
       - web 
@@ -50,7 +51,7 @@ services:
     expose:
       - "8080"
     environment:
-      - VIRTUAL_HOST=mydomini.com
+      - VIRTUAL_HOST=mydominio.com
       - LETSENCRYPT_HOST=mydominio.com
       - LETSENCRYPT_EMAIL=test@gmail.com
     networks:
