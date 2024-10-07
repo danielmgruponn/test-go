@@ -21,10 +21,10 @@ services:
       - TRUST_DOWNSTREAM_PROXY=false
     networks:
       - web
-  
+
   # Servicio para generar certificado SSL
   letsencrypt:
-    image: jrcs/letsencrypt-nginx-proxy-companion 
+    image: jrcs/letsencrypt-nginx-proxy-companion
     container_name: letsencrypt
     restart: always
     volumes:
@@ -46,7 +46,7 @@ services:
       dockerfile: Dockerfile
     restart: always
     volumes:
-      - ./test-go:/go
+      - ./app:/go
     command: /bin/sh -c "cd /app && ./server"
     expose:
       - "8080"
