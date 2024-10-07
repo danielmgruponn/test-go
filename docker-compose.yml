@@ -1,0 +1,71 @@
+services:
+
+  # Nginx Proxy para manejar las peticiones HTTP/HTTPS
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    container_name: nginx-proxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - certs:/etc/nginx/certs:ro
+      - vhostd:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - acme:/etc/acme.sh
+    labels:
+      - com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy
+    environment:
+      - DEFAULT_HOST=mydominio.com
+      - TRUST_DOWNSTREAM_PROXY=false
+    networks:
+      - web
+  
+  # Servicio para generar certificado SSL
+  letsencrypt:
+    image: jrcs/letsencrypt-nginx-proxy-companion 
+    container_name: letsencrypt
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - certs:/etc/nginx/certs:rw
+      - vhostd:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - acme:/etc/acme.sh
+    environment:
+      - NGINX_PROXY_CONTAINER=nginx-proxy
+    networks:
+      - web
+
+  # Servicio para la aplicación web en Go
+  app:
+    container_name: app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    volumes:
+      - ./test-go:/go
+    command: /bin/sh -c "cd /app && ./server"
+    expose:
+      - "8080"
+    environment:
+      - VIRTUAL_HOST=mydominio.com
+      - LETSENCRYPT_HOST=mydominio.com
+      - LETSENCRYPT_EMAIL=test@gmail.com
+    networks:
+      - web
+    depends_on:
+      - nginx-proxy
+      - letsencrypt
+
+networks:
+  web:
+    external: false
+
+volumes:
+  certs:
+  html:
+  vhostd:
+  acme:
